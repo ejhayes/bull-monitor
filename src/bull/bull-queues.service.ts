@@ -8,7 +8,6 @@ import { EventEmitter2 } from "eventemitter2";
 import { EVENT_TYPES, REDIS_EVENT_TYPES } from "./bull.enums";
 import { IQueueCreatedEvent, IQueueRemovedEvent } from "./bull.interfaces";
 
-
 @Injectable()
 export class BullQueuesService implements OnModuleInit {
     private readonly _queues: {[queueName: string]: Bull.Queue} = {};

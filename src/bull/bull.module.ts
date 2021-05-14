@@ -5,7 +5,7 @@ import { ConfigModule } from "../config/config.module";
 import { BullQueuesService } from "./bull-queues.service";
 import { BullDashboardMiddleware } from "./bull-dashboard.middleware";
 import { BullMetricsService } from "./bull-metrics.service";
-import { BullDashboardService } from "./bull-dashboard.service";
+import { BullUiService } from "./bull-ui.service";
 
 @Module({
     imports: [
@@ -22,7 +22,7 @@ import { BullDashboardService } from "./bull-dashboard.service";
             }
         }),
     ],
-    providers: [BullQueuesService, BullMetricsService, BullDashboardService]
+    providers: [BullQueuesService, BullMetricsService, BullUiService]
 })
 export class BullModule implements NestModule {
     configure(consumer: MiddlewareConsumer): MiddlewareConsumer | void {
