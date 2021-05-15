@@ -46,7 +46,7 @@ export class BullArenaUi implements IBullUi {
             ]
         });
 
-        // TODO: we need to initialize with SOMETHING or else an error gets thrown
+        // NOTE: we need to initialize with SOMETHING or else an error gets thrown
         // see https://github.com/bee-queue/arena/blob/master/src/server/queue/index.js#L28
         ((this._ui as any).locals as BullArenaLocals).Queues._config.queues = [];
     }

@@ -9,7 +9,8 @@ import { IBullUi } from "../bull.interfaces";
  * On the hacky side. This has the internal information for how
  * queues are stored in bull board. Since we are adding/removing
  * periodically we want to be able to modify these values in response
- * to incoming redis events.
+ * to incoming redis events. There are currently existing methods
+ * setQueues and replaceQueues but they seem a bit heavy handed
  */
 interface BullBoardLocals {
     bullBoardQueues: Map<string, BullAdapter>
@@ -26,15 +27,17 @@ export class BullBoardUi implements IBullUi {
     }
 
     addQueue(queuePrefix: string, queueName: string, queue: Queue) {
+        const queueKey = `${queuePrefix}:${queueName}`;
         (this._ui.router.locals as BullBoardLocals)
             .bullBoardQueues
-            .set(queueName, new BullAdapter(queue))  
+            .set(queueKey, new BullAdapter(queue))  
     }
 
     removeQueue(queuePrefix: string, queueName: string) {
+        const queueKey = `${queuePrefix}:${queueName}`;
         (this._ui.router.locals as BullBoardLocals)
             .bullBoardQueues
-            .delete(queueName)
+            .delete(queueKey)
     }
 
     get middleware() {

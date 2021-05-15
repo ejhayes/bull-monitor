@@ -1,0 +1,12 @@
+notifiers:
+  - name: notification-email-1
+    type: email
+    uid: email-1
+    org_id: 1
+    is_default: true
+    settings:
+      addresses: grafana-alerts@example.com
+delete_notifiers:
+  - name: notification-email-1
+    uid: email-1
+    org_id: 1

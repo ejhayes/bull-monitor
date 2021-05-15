@@ -6,28 +6,53 @@ export interface IBullUi {
     removeQueue(queuePrefix: string, queueName: string): void
     middleware: RequestHandler
 }
-export interface IQueueCreatedEvent {
+export class QueueCreatedEvent {
     /**
      * Queue name that was created
      */
-    queueName: string
+    readonly queueName: string
     /**
      * Queue prefix
      */
-    queuePrefix: string
+    readonly queuePrefix: string
     /**
      * Bull queue
      */
-    queue: Queue
+    readonly queue: Queue
+
+    constructor(queuePrefix: string, queue: Queue) {
+        this.queue = queue
+        this.queuePrefix = queuePrefix
+        this.queueName = queue.name
+    }
+
+    /**
+     * Unique queue name
+     */
+    get uniqueName() {
+        return `${this.queuePrefix}-${this.queueName}`
+    }
 }
 
-export interface IQueueRemovedEvent {
+export class QueueRemovedEvent {
     /**
      * Queue name that was removed
      */
-    queueName: string
+    readonly queueName: string
     /**
      * Queue prefix
      */
-    queuePrefix: string
+    readonly queuePrefix: string
+
+    constructor(queuePrefix: string, queueName: string) {
+        this.queuePrefix = queuePrefix
+        this.queueName = queueName
+    }
+
+    /**
+     * Unique queue name
+     */
+    get uniqueName() {
+        return `${this.queuePrefix}-${this.queueName}`
+    }
 }

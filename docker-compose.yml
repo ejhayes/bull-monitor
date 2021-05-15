@@ -1,0 +1,57 @@
+# grafana
+# prometheus
+# mailhog
+# redis
+# simple nodejs script???
+version: '3'
+
+services:
+  bull-exporter:
+    image: bull-exporter:latest
+    build:
+      context: .
+      args:
+        - BUILD_VERSION=local
+    ports: 
+      - 3000:3000
+    env_file:
+      - ./environments/local.env
+    depends_on: 
+      - redis
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      PORT: 3000
+  grafana:
+    image: grafana/grafana:latest
+    environment: 
+      GF_INSTALL_PLUGINS: grafana-clock-panel,grafana-simple-json-datasource,grafana-image-renderer
+    ports: 
+      - 3001:3001
+    depends_on: 
+      - grafana
+      - smtp
+    volumes: 
+      - ./grafana.ini:/etc/grafana/grafana.ini
+      - ./grafana_prometheus.yml:/etc/grafana/provisioning/datasources/grafana_prometheus.yml
+      - ./grafana_email.yml:/etc/grafana/provisioning/notifiers/grafana_email.yml
+  prometheus:
+    image: prom/prometheus:latest
+    ports: 
+      - 3002:9090
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+  redis:
+    image: redis:alpine
+    ports:
+      - '6001:6379'
+  smtp:
+    image: mailhog/mailhog:latest
+    restart: always
+    ports:
+      - 6002:1025
+      - 6003:8025
+    environment:
+      - MH_AUTH_FILE=/home/mailhog/smtp-auth
+    volumes:
+      - ./smtp-auth:/home/mailhog/smtp-auth

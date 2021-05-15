@@ -3,6 +3,11 @@ export enum REDIS_EVENT_TYPES {
     SET = 'set',
 }
 
+export enum REDIS_CLIENTS {
+    SUBSCRIBE = 'subscriber',
+    PUBLISH = 'publish'
+}
+
 export enum EVENT_TYPES {
     QUEUE_CREATED = 'queue.created',
     QUEUE_REMOVED = 'queue.removed'

@@ -1,12 +1,8 @@
 import { Injectable } from "@nestjs/common";
 import { OnEvent } from "@nestjs/event-emitter";
-import { createBullBoard } from "bull-board";
-import { BullAdapter } from "bull-board/bullAdapter"
 import { InjectLogger, LoggerService } from "../logger";
 import { EVENT_TYPES, UI_TYPES } from "./bull.enums";
-import { IQueueCreatedEvent, IQueueRemovedEvent, IBullUi } from "./bull.interfaces";
-import Arena from 'bull-arena';
-import Bull from 'bull';
+import { QueueCreatedEvent, QueueRemovedEvent, IBullUi } from "./bull.interfaces";
 import { ConfigService } from "../config/config.service";
 import { BullBoardUi } from "./ui/bull-board.ui";
 import { BullArenaUi } from "./ui/arena.ui";
@@ -33,13 +29,13 @@ export class BullUiService {
     }
 
     @OnEvent(EVENT_TYPES.QUEUE_CREATED)
-    private addQueueToDashboard(event: IQueueCreatedEvent) {
+    private addQueueToDashboard(event: QueueCreatedEvent) {
         this.logger.log(`Adding queue to dashboard: ${event.queueName}`)
         this._ui.addQueue(event.queuePrefix, event.queueName, event.queue);
     }
 
     @OnEvent(EVENT_TYPES.QUEUE_REMOVED)
-    private removeQueueFromDashboard(event: IQueueRemovedEvent) {
+    private removeQueueFromDashboard(event: QueueRemovedEvent) {
         this.logger.log(`Removing queue from dashboard: ${event.queueName}`);
         this._ui.removeQueue(event.queuePrefix, event.queueName);
     }

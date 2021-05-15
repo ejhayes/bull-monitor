@@ -6,6 +6,7 @@ import { BullQueuesService } from "./bull-queues.service";
 import { BullDashboardMiddleware } from "./bull-dashboard.middleware";
 import { BullMetricsService } from "./bull-metrics.service";
 import { BullUiService } from "./bull-ui.service";
+import { REDIS_CLIENTS } from "./bull.enums";
 
 @Module({
     imports: [
@@ -14,11 +15,14 @@ import { BullUiService } from "./bull-ui.service";
             imports: [ConfigModule],
             inject: [ConfigService],
             useFactory: (configService: ConfigService) => {
-                return {
-                    host: configService.config.REDIS_HOST,
-                    port: configService.config.REDIS_PORT,
-                    enableReadyCheck: true
-                }
+                return [REDIS_CLIENTS.SUBSCRIBE, REDIS_CLIENTS.PUBLISH].map((client) => {
+                    return {
+                        name: client,
+                        host: configService.config.REDIS_HOST,
+                        port: configService.config.REDIS_PORT,
+                        enableReadyCheck: true
+                    }
+                })
             }
         }),
     ],
