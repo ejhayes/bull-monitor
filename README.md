@@ -40,3 +40,6 @@ Other services:
 - Image plugin for grafana - grafana-image-renderer
 - Sample webhook notification???
 - Istio metrics?
+- Screenshots/documentation
+- Basic smoke testing
+- Code climate / other code quality tools
