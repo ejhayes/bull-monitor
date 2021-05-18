@@ -23,6 +23,7 @@ export class BullMetricsService {
         this.queueMetrics = init({
             promClient: metricsService.promClient,
             interval: configService.config.BULL_COLLECT_QUEUE_METRICS_INTERVAL_MS,
+            useGlobal: true
         });
     }
 

@@ -25,16 +25,25 @@ services:
   grafana:
     image: grafana/grafana:latest
     environment: 
-      GF_INSTALL_PLUGINS: grafana-clock-panel,grafana-simple-json-datasource,grafana-image-renderer
+      GF_INSTALL_PLUGINS: grafana-clock-panel,grafana-simple-json-datasource 
+      GF_RENDERING_SERVER_URL: http://renderer:8081/render
+      GF_RENDERING_CALLBACK_URL: http://grafana:3000/
+      GF_LOG_FILTERS: rendering:debug
     ports: 
       - 3001:3001
     depends_on: 
-      - grafana
+      - prometheus
       - smtp
+      - grafana-renderer
     volumes: 
       - ./grafana.ini:/etc/grafana/grafana.ini
       - ./grafana_prometheus.yml:/etc/grafana/provisioning/datasources/grafana_prometheus.yml
       - ./grafana_email.yml:/etc/grafana/provisioning/notifiers/grafana_email.yml
+  # https://github.com/grafana/grafana-image-renderer/issues/48
+  grafana-renderer: # https://grafana.com/docs/grafana/latest/administration/image_rendering/#remote-rendering-service
+    image: grafana/grafana-image-renderer:latest
+    ports:
+      - 8081
   prometheus:
     image: prom/prometheus:latest
     ports: 

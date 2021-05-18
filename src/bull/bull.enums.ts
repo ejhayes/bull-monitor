@@ -1,6 +1,14 @@
-export enum REDIS_EVENT_TYPES {
+export enum REDIS_KEYSPACE_EVENT_TYPES {
     DELETE = 'del',
     SET = 'set',
+}
+
+export enum REDIS_EVENT_TYPES {
+    READY = 'ready',
+    PMESSAGE = 'pmessage',
+    ERROR = 'error',
+    END = 'end',
+    RECONNECTING = 'reconnecting'
 }
 
 export enum REDIS_CLIENTS {

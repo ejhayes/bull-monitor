@@ -30,7 +30,9 @@ Other services:
 - Open a PR
 
 ## TODO
-- Config namespace events
+- Config namespace events - how to ensure this is properly set????
+- Disconnect event - when reconnect, rescan
+- Clusters - ensure we can scan all queues in a cluster
 - Docker container creation
 - Github actions to build container and push to docker hub
 - Dex/SAML/OIDC login
