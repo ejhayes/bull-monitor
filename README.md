@@ -6,6 +6,11 @@ This is an all-in-one tool to help you visualize and report on bull! It runs as 
 - Configurable UI support to visualize bull queues (Bull Board or Arena)
 
 ## screenshots
+[![](screenshots/bull-board-ui.png)]
+[![](screenshots/arena-ui.png)]
+[![](screenshots/grafana-ui.png)]
+[![](screenshots/prometheus-metrics.png)]
+[![](screenshots/swagger-ui.png)]
 
 
 ## getting started
@@ -19,6 +24,19 @@ If you are using `docker-compose` you can add the following:
 ```yml
 
 ```
+
+## prometheus metrics
+- List of metrics
+- Grafana integration
+- Queue metrics are GLOBAL not worker specific
+
+## bull ui
+
+## todo
+
+## security considerations
+- Should not be publically accessible in production environment
+- Single threaded should not scale
 
 If you want to also run prometheus and grafana:
 

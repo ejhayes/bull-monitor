@@ -22,7 +22,7 @@ const parseBullQueue = (key: string) => {
 const REDIS_CONFIG_NOTIFY_KEYSPACE_EVENTS = 'notify-keyspace-events';
 
 // Expected configuration flags
-const REDIS_CONFIG_NOTIFY_KEYSPACE_EVENTS_FLAGS = 'g$K';
+const REDIS_CONFIG_NOTIFY_KEYSPACE_EVENTS_FLAGS = 'A$K';
 @Injectable()
 export class BullQueuesService implements OnModuleInit {
     private readonly _queues: {[queueName: string]: Bull.Queue} = {};

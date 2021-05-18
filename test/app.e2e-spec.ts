@@ -1,12 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
-import { AppModule } from './../src/app.module';
+import request from 'supertest';
+jest.mock('ioredis', () => require('ioredis-mock/jest'));
+import { AppModule } from 'src/app.module'
 
-describe('AppController (e2e)', () => {
+describe('Smoke testing endpoints', () => {
   let app: INestApplication;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -15,10 +16,25 @@ describe('AppController (e2e)', () => {
     await app.init();
   });
 
-  it('/ (GET)', () => {
+  it('/metrics', () => {
     return request(app.getHttpServer())
-      .get('/')
+      .get('/metrics')
       .expect(200)
-      .expect('Hello World!');
+      .expect('Content-Type', 'text/plain; charset=utf-8; version=0.0.4')
   });
+
+  it('/version', () => {
+    return request(app.getHttpServer())
+      .get('/version')
+      .expect(200)
+      .expect('local')
+  });
+
+  it('/health', () => {
+    return request(app.getHttpServer())
+      .get('/health')
+      .expect(200)
+      .expect('OK')
+  });
+
 });
