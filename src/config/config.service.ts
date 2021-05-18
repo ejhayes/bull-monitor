@@ -15,6 +15,11 @@ export class ConfigService {
      */
     COLLECT_NODEJS_METRICS_INTERVAL_MS: num({ default: 60000 }),
     /**
+     * Automatically update redis configuration (false requires you
+     * to manually set keyspace notifications)
+     */
+    REDIS_CONFIGURE_KEYSPACE_NOTIFICATIONS: bool({default: true}),
+    /**
      * Redis host to fetch queues from
      */
     REDIS_HOST: str(),

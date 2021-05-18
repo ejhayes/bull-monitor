@@ -41,7 +41,3 @@ import { BullModule } from './bull/bull.module';
   ],
 })
 export class AppModule {}
-
-
-// TODO: bull arena/dashboard view
-// TODO: sentry errors?

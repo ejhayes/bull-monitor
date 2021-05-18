@@ -1,13 +1,24 @@
 # bull-monitor
-This is an all-in-one tool to help you visualize and report on bull! It includes:
+This is an all-in-one tool to help you visualize and report on bull! It runs as a docker container that you can spin up with local development or host wherever you see fit. The core goal of this project is to provide realtime integration of your bull queues with existing bull tooling...without needing to run write any custom code. The following is automatically included:
 
-- Real time queue monitoring of you rbull queues (just point at your redis and go)
-- Prometheus metrics (configurable scraping times)
-- Configurable UI support (arena or bull-board)
+- Automatic discovery of your bull queues (just point this at your redis instance)
+- Automatic configuration of prometheus metrics for each discovered queue
+- Configurable UI support to visualize bull queues (Bull Board or Arena)
+
+## screenshots
+
+
+## getting started
 
 To get started:
 
   docker compose up -d bull-exporter
+
+If you are using `docker-compose` you can add the following:
+
+```yml
+
+```
 
 If you want to also run prometheus and grafana:
 
@@ -31,16 +42,11 @@ Other services:
 
 ## TODO
 - Config namespace events - how to ensure this is properly set????
-- Disconnect event - when reconnect, rescan
 - Clusters - ensure we can scan all queues in a cluster
 - Docker container creation
 - Github actions to build container and push to docker hub
 - Dex/SAML/OIDC login
-- Grafana integration help (SMTP config needed)
-- Job duration metric (not working it seems???)
 - Bull dashboard for grafana (to be loaded)
-- Image plugin for grafana - grafana-image-renderer
-- Sample webhook notification???
 - Istio metrics?
 - Screenshots/documentation
 - Basic smoke testing

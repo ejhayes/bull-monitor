@@ -146,6 +146,11 @@ export class BullQueuesService implements OnModuleInit {
      * A     Alias for "g$lshztxed", so that the "AKE" string means all the events except "m".
      */
     private async configureKeyspaceEventNotifications() {
+        if (!this.configService.config.REDIS_CONFIGURE_KEYSPACE_NOTIFICATIONS) {
+            this.logger.log('Skipping redis keyspace notification configuration.');
+            return;
+        }
+
         const client = await this.redisService.getClient(REDIS_CLIENTS.PUBLISH);
         const keyspaceConfig = ((await client.config("GET", REDIS_CONFIG_NOTIFY_KEYSPACE_EVENTS))[1] || '').split('').sort().join('');
         const expectedConfig = [...new Set(keyspaceConfig + REDIS_CONFIG_NOTIFY_KEYSPACE_EVENTS_FLAGS)].sort().join('')
