@@ -1,7 +1,7 @@
 import { Injectable, OnModuleInit } from "@nestjs/common";
 import {RedisService} from 'nestjs-redis';
-import { ConfigService } from "src/config/config.service";
-import { InjectLogger, LoggerService } from "src/logger";
+import { ConfigService } from "@app/config/config.service";
+import { InjectLogger, LoggerService } from "@app/logger";
 import Bull from "bull";
 import { Mutex } from "async-mutex";
 import { EventEmitter2 } from "eventemitter2";

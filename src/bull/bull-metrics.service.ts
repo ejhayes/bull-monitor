@@ -1,12 +1,11 @@
 import { Injectable } from "@nestjs/common";
 import { OnEvent } from "@nestjs/event-emitter";
-import { InjectMetrics, MetricsService } from "../metrics";
-import { InjectLogger, LoggerService } from "../logger";
+import { InjectMetrics, MetricsService } from "@app/metrics";
+import { InjectLogger, LoggerService } from "@app/logger";
 import { EVENT_TYPES } from "./bull.enums";
 import { QueueCreatedEvent, QueueRemovedEvent } from "./bull.interfaces";
 import { init } from "bull-prom";
-import { ConfigService } from "../config/config.service";
-
+import { ConfigService } from "@app/config/config.service";
 @Injectable()
 export class BullMetricsService {
     private readonly _queues: { [queueName: string]: ReturnType<ReturnType<typeof init>['start']> } = {};

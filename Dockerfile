@@ -3,7 +3,7 @@ WORKDIR /app
 RUN apk add --no-cache openssh git
 COPY package* .
 RUN npm install --production
-COPY dist/src .
+COPY dist .
 
 FROM node:14-alpine
 WORKDIR /app

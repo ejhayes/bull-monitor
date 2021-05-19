@@ -114,6 +114,9 @@ https://github.com/bee-queue/arena
 - Bull - better queue retrieval methods from redis (using `SCAN` to accomplish this)
 - Bull board - public add/remove queues
 - Bull arena - public add/remove queues
+- ncc compilation
+- error handling (what happens about job event replay if we get disconnected?)
+- whitelabeling
 
 ## security considerations
 - Should not be publically accessible in production environment

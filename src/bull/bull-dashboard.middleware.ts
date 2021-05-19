@@ -1,6 +1,6 @@
 import { Injectable, NestMiddleware, Scope } from "@nestjs/common";
 import { NextFunction, Request, Response } from "express";
-import { InjectLogger, LoggerService } from "../logger";
+import { InjectLogger, LoggerService } from "@app/logger";
 import { BullUiService } from "./bull-ui.service";
 
 @Injectable()

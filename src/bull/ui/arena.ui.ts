@@ -1,7 +1,7 @@
 import Bull from "bull";
 import Arena from "bull-arena";
-import { ConfigService } from "../../config/config.service";
-import { LoggerService } from "../../logger";
+import { ConfigService } from "@app/config/config.service";
+import { LoggerService } from "@app/logger";
 import { IBullUi } from "../bull.interfaces";
 
 type BullArenaQueue = Parameters<typeof Arena>[0]['queues'][0]
@@ -44,6 +44,8 @@ export class BullArenaUi implements IBullUi {
                     type: QUEUE_TYPES.BULL
                 }
             ]
+        }, {
+            disableListen: true
         });
 
         // NOTE: we need to initialize with SOMETHING or else an error gets thrown

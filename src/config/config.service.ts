@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { bool, cleanEnv, num, port, str } from 'envalid';
-import { UI_TYPES } from 'src/bull/bull.enums';
-import { LOG_LEVELS } from 'src/logger/common';
+import { UI_TYPES } from '@app/bull/bull.enums';
+import { LOG_LEVELS } from '@app/logger/common';
 
 @Injectable()
 export class ConfigService {

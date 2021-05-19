@@ -14,11 +14,11 @@
     "start:debug": "dotenv -e environments/local.env -- nest start --debug --watch",
     "start:prod": "node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:cov": "jest --coverage",
-    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "REDIS_CONFIGURE_KEYSPACE_NOTIFICATIONS=false dotenv -e environments/local.env -- jest --config ./test/jest-e2e.json"
+    "test": "dotenv -e environments/local.env -e environments/test.env -- jest",
+    "test:watch": "dotenv -e environments/local.env -e environments/test.env -- jest --watch",
+    "test:cov": "dotenv -e environments/local.env -e environments/test.env -- jest --coverage",
+    "test:debug": "dotenv -e environments/local.env -e environments/test.env -- node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
+    "test:e2e": "dotenv -e environments/local.env -e environments/test.env -- jest --rootDir . --testRegex '.e2e-spec.ts$'"
   },
   "dependencies": {
     "@nestjs/common": "^7.6.15",
@@ -72,12 +72,15 @@
     "typescript": "^4.2.3"
   },
   "jest": {
+    "moduleNameMapper": {
+      "^@app/(.*)$": "<rootDir>/src/$1"
+    },
     "moduleFileExtensions": [
       "js",
       "json",
       "ts"
     ],
-    "rootDir": "src",
+    "rootDir": ".",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"

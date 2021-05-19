@@ -1,7 +1,7 @@
 import { MiddlewareConsumer, Module, NestModule } from "@nestjs/common";
 import { RedisModule } from "nestjs-redis";
-import { ConfigService } from "../config/config.service";
-import { ConfigModule } from "../config/config.module";
+import { ConfigService } from "@app/config/config.service";
+import { ConfigModule } from "@app/config/config.module";
 import { BullQueuesService } from "./bull-queues.service";
 import { BullDashboardMiddleware } from "./bull-dashboard.middleware";
 import { BullMetricsService } from "./bull-metrics.service";
