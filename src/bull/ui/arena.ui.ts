@@ -1,10 +1,10 @@
-import Bull from "bull";
-import Arena from "bull-arena";
-import { ConfigService } from "@app/config/config.service";
-import { LoggerService } from "@app/logger";
-import { IBullUi } from "../bull.interfaces";
+import { ConfigService } from '@app/config/config.service';
+import { LoggerService } from '@app/logger';
+import Bull from 'bull';
+import Arena from 'bull-arena';
+import { IBullUi } from '../bull.interfaces';
 
-type BullArenaQueue = Parameters<typeof Arena>[0]['queues'][0]
+type BullArenaQueue = Parameters<typeof Arena>[0]['queues'][0];
 
 /**
  * On the hacky side. This has the internal information for how
@@ -13,77 +13,74 @@ type BullArenaQueue = Parameters<typeof Arena>[0]['queues'][0]
  * to incoming redis events.
  */
 interface BullArenaLocals {
-    Queues: {
-        _config: {
-            queues: BullArenaQueue[]
-        }
-    }
+  Queues: {
+    _config: {
+      queues: BullArenaQueue[];
+    };
+  };
 }
 
 enum QUEUE_TYPES {
-    BULL = 'bull'
+  BULL = 'bull',
 }
 
 export class BullArenaUi implements IBullUi {
-    private readonly _ui: ReturnType<typeof Arena>
+  private readonly _ui: ReturnType<typeof Arena>;
 
-    constructor(
-        private readonly logger: LoggerService,
-        private readonly configService: ConfigService
-    ) {
-        this._ui = Arena({
-            Bull,
-            queues: [
-                {
-                    hostId: '',
-                    name: '',
-                    redis: {
-                        host: '',
-                        port: 0
-                    },
-                    type: QUEUE_TYPES.BULL
-                }
-            ]
-        }, {
-            disableListen: true
-        });
-
-        // NOTE: we need to initialize with SOMETHING or else an error gets thrown
-        // see https://github.com/bee-queue/arena/blob/master/src/server/queue/index.js#L28
-        ((this._ui as any).locals as BullArenaLocals).Queues._config.queues = [];
-    }
-
-    addQueue(queuePrefix: string, queueName: string, queue: Bull.Queue) {
-        ((this._ui as any).locals as BullArenaLocals).Queues._config.queues.push({
-            hostId: queuePrefix,
-            name: queueName,
-            prefix: queuePrefix,
+  constructor(
+    private readonly logger: LoggerService,
+    private readonly configService: ConfigService,
+  ) {
+    this._ui = Arena(
+      {
+        Bull,
+        queues: [
+          {
+            hostId: '',
+            name: '',
             redis: {
-                host: this.configService.config.REDIS_HOST,
-                port: this.configService.config.REDIS_PORT
+              host: '',
+              port: 0,
             },
-            type: QUEUE_TYPES.BULL
-        })
-    }
+            type: QUEUE_TYPES.BULL,
+          },
+        ],
+      },
+      {
+        disableListen: true,
+      },
+    );
 
-    removeQueue(queuePrefix: string, queueName: string) {
-        ((this._ui as any).locals as BullArenaLocals)
-            .Queues
-            ._config
-            .queues
-            .splice(
-                ((this._ui as any).locals as BullArenaLocals)
-                    .Queues
-                    ._config
-                    .queues
-                    .findIndex(
-                        e => e.name == queueName && e.hostId == queuePrefix
-                    ),
-                1
-            )
-    }
+    // NOTE: we need to initialize with SOMETHING or else an error gets thrown
+    // see https://github.com/bee-queue/arena/blob/master/src/server/queue/index.js#L28
+    ((this._ui as any).locals as BullArenaLocals).Queues._config.queues = [];
+  }
 
-    get middleware() {
-        return this._ui;
-    }
+  addQueue(queuePrefix: string, queueName: string, queue: Bull.Queue) {
+    ((this._ui as any).locals as BullArenaLocals).Queues._config.queues.push({
+      hostId: queuePrefix,
+      name: queueName,
+      prefix: queuePrefix,
+      redis: {
+        host: this.configService.config.REDIS_HOST,
+        port: this.configService.config.REDIS_PORT,
+      },
+      type: QUEUE_TYPES.BULL,
+    });
+  }
+
+  removeQueue(queuePrefix: string, queueName: string) {
+    ((this._ui as any).locals as BullArenaLocals).Queues._config.queues.splice(
+      (
+        (this._ui as any).locals as BullArenaLocals
+      ).Queues._config.queues.findIndex(
+        (e) => e.name == queueName && e.hostId == queuePrefix,
+      ),
+      1,
+    );
+  }
+
+  get middleware() {
+    return this._ui;
+  }
 }

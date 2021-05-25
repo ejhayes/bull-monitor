@@ -12,7 +12,7 @@ async function bootstrap() {
   loggerService.setContext(bootstrap.name);
   app.useLogger(loggerService);
 
-  OpenAPIModule.setup('api', app);
+  OpenAPIModule.setup('docs', app);
 
   loggerService.log(`Listening on HTTP port ${configService.config.PORT}`);
   await app.listen(configService.config.PORT);

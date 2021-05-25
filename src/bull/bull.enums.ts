@@ -1,27 +1,27 @@
 export enum REDIS_KEYSPACE_EVENT_TYPES {
-    DELETE = 'del',
-    SET = 'set',
+  DELETE = 'del',
+  SET = 'set',
 }
 
 export enum REDIS_EVENT_TYPES {
-    READY = 'ready',
-    PMESSAGE = 'pmessage',
-    ERROR = 'error',
-    END = 'end',
-    RECONNECTING = 'reconnecting'
+  END = 'end',
+  ERROR = 'error',
+  PMESSAGE = 'pmessage',
+  READY = 'ready',
+  RECONNECTING = 'reconnecting',
 }
 
 export enum REDIS_CLIENTS {
-    SUBSCRIBE = 'subscriber',
-    PUBLISH = 'publish'
+  PUBLISH = 'publish',
+  SUBSCRIBE = 'subscriber',
 }
 
 export enum EVENT_TYPES {
-    QUEUE_CREATED = 'queue.created',
-    QUEUE_REMOVED = 'queue.removed'
+  QUEUE_CREATED = 'queue.created',
+  QUEUE_REMOVED = 'queue.removed',
 }
 
 export enum UI_TYPES {
-    BULL_BOARD = 'bull-board',
-    ARENA = 'arena'
+  ARENA = 'arena',
+  BULL_BOARD = 'bull-board',
 }

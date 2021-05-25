@@ -1,5 +1,5 @@
-import * as promClient from 'prom-client';
 import { Inject, Injectable } from '@nestjs/common';
+import * as promClient from 'prom-client';
 import { METRICS_MODULE_OPTIONS } from './common';
 import { MetricsModuleOptions } from './interfaces';
 

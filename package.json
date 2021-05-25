@@ -8,12 +8,19 @@
   "scripts": {
     "prebuild": "rimraf dist",
     "build": "nest build",
+    "ci:build": "npm run build && docker-compose build bull-monitor",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "services:start": "docker-compose up -d grafana",
+    "services:start:all": "docker-compose up -d grafana bull-monitor",
+    "services:stop": "docker-compose stop",
+    "services:remove": "docker-compose rm --stop -f",
     "start": "dotenv -e environments/local.env -- nest start",
     "start:dev": "dotenv -e environments/local.env -- nest start --watch",
     "start:debug": "dotenv -e environments/local.env -- nest start --debug --watch",
     "start:prod": "node dist/main",
-    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\"",
+    "lint:fix": "npm run lint --fix",
+    "precommit": "npm run lint && npm run build && npm run test && npm run test:e2e",
     "test": "dotenv -e environments/local.env -e environments/test.env -- jest",
     "test:watch": "dotenv -e environments/local.env -e environments/test.env -- jest --watch",
     "test:cov": "dotenv -e environments/local.env -e environments/test.env -- jest --coverage",
@@ -60,7 +67,9 @@
     "eslint-config-prettier": "^8.1.0",
     "eslint-plugin-import": "^2.22.1",
     "eslint-plugin-prettier": "^3.3.1",
+    "eslint-plugin-typescript-sort-keys": "^1.6.0",
     "faker": "^5.5.3",
+    "husky": "^6.0.0",
     "ioredis-mock": "^5.5.6",
     "jest": "^26.6.3",
     "prettier": "^2.2.1",
@@ -86,7 +95,7 @@
       "^.+\\.(t|j)s$": "ts-jest"
     },
     "collectCoverageFrom": [
-      "**/*.(t|j)s"
+      "src/**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"

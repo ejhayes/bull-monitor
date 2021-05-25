@@ -1,8 +1,8 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { AppModule } from '@app/app.module';
 import { INestApplication } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 jest.mock('ioredis', () => require('ioredis-mock/jest'));
-import {AppModule} from '@app/app.module';
 
 describe('Smoke testing endpoints', () => {
   let app: INestApplication;
@@ -20,21 +20,17 @@ describe('Smoke testing endpoints', () => {
     return request(app.getHttpServer())
       .get('/metrics')
       .expect(200)
-      .expect('Content-Type', 'text/plain; charset=utf-8; version=0.0.4')
+      .expect('Content-Type', 'text/plain; charset=utf-8; version=0.0.4');
   });
 
   it('/version', () => {
     return request(app.getHttpServer())
       .get('/version')
       .expect(200)
-      .expect('local')
+      .expect('local');
   });
 
   it('/health', () => {
-    return request(app.getHttpServer())
-      .get('/health')
-      .expect(200)
-      .expect('OK')
+    return request(app.getHttpServer()).get('/health').expect(200).expect('OK');
   });
-
 });

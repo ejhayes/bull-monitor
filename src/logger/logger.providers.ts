@@ -1,6 +1,6 @@
-import { LoggerService } from './logger.service';
 import { Provider } from '@nestjs/common';
 import { getLoggerToken } from './common/logger.utils';
+import { LoggerService } from './logger.service';
 
 function createLoggerProvider(prefix: string): Provider<LoggerService> {
   return {

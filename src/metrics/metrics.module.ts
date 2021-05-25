@@ -1,6 +1,6 @@
 import { DynamicModule, Module, Provider } from '@nestjs/common';
-import { MetricsModuleAsyncOptions, MetricsModuleOptions } from './interfaces';
 import { METRICS_MODULE_OPTIONS } from './common';
+import { MetricsModuleAsyncOptions, MetricsModuleOptions } from './interfaces';
 import { MetricsController } from './metrics.controller';
 import { MetricsService } from './metrics.service';
 

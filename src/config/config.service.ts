@@ -1,7 +1,7 @@
-import { Injectable } from '@nestjs/common';
-import { bool, cleanEnv, num, port, str } from 'envalid';
 import { UI_TYPES } from '@app/bull/bull.enums';
 import { LOG_LEVELS } from '@app/logger/common';
+import { Injectable } from '@nestjs/common';
+import { bool, cleanEnv, num, port, str } from 'envalid';
 
 @Injectable()
 export class ConfigService {
@@ -18,7 +18,7 @@ export class ConfigService {
      * Automatically update redis configuration (false requires you
      * to manually set keyspace notifications)
      */
-    REDIS_CONFIGURE_KEYSPACE_NOTIFICATIONS: bool({default: true}),
+    REDIS_CONFIGURE_KEYSPACE_NOTIFICATIONS: bool({ default: true }),
     /**
      * Redis host to fetch queues from
      */
@@ -39,7 +39,7 @@ export class ConfigService {
     /**
      * Default log label to use
      */
-    LOG_LABEL: str({ default: 'bull-exporter-metrics' }),
+    LOG_LABEL: str({ default: 'bull-monitor' }),
     /**
      * Logging level to use
      */
@@ -50,15 +50,16 @@ export class ConfigService {
         LOG_LEVELS.INFO,
         LOG_LEVELS.WARN,
       ],
+      default: LOG_LEVELS.INFO,
     }),
     /**
      * NodeJS environment name
      */
-    NODE_ENV: str(),
+    NODE_ENV: str({ default: 'production' }),
     /**
      * Default port to use
      */
-    PORT: port(),
+    PORT: port({ default: 3000 }),
     /**
      * Sentry DSN to use (leave blank to disable)
      */
@@ -66,7 +67,10 @@ export class ConfigService {
     /**
      * UI to use (default: bull-board)
      */
-    UI: str({default: UI_TYPES.BULL_BOARD, choices: [UI_TYPES.BULL_BOARD, UI_TYPES.ARENA]}),
+    UI: str({
+      default: UI_TYPES.BULL_BOARD,
+      choices: [UI_TYPES.BULL_BOARD, UI_TYPES.ARENA],
+    }),
     /**
      * Version
      */

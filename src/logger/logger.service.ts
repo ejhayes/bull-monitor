@@ -1,18 +1,18 @@
-import { Environments, LOGGER_MODULE_OPTIONS } from './common';
 import {
   Inject,
   Injectable,
   Logger as NestLogger,
   Scope,
 } from '@nestjs/common';
-import { LoggerMeta, LoggerModuleOptions } from './interfaces';
+import { yellow } from 'chalk';
 import {
   Logger as WinstonLogger,
   createLogger,
   format,
   transports,
 } from 'winston';
-import { yellow } from 'chalk';
+import { Environments, LOGGER_MODULE_OPTIONS } from './common';
+import { LoggerMeta, LoggerModuleOptions } from './interfaces';
 
 @Injectable({ scope: Scope.TRANSIENT })
 export class LoggerService extends NestLogger {
