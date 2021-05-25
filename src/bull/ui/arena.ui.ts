@@ -57,6 +57,7 @@ export class BullArenaUi implements IBullUi {
         ((this._ui as any).locals as BullArenaLocals).Queues._config.queues.push({
             hostId: queuePrefix,
             name: queueName,
+            prefix: queuePrefix,
             redis: {
                 host: this.configService.config.REDIS_HOST,
                 port: this.configService.config.REDIS_PORT
