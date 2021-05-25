@@ -32,7 +32,6 @@ jobs:
           CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
         with:
           coverageCommand: npm run test:cov
-        run: npm run test:cov
       - name: e2e tests
         run: npm run test:e2e
       
