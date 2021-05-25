@@ -5,13 +5,6 @@ This is an all-in-one tool to help you visualize and report on bull! It runs as 
 - Automatic configuration of prometheus metrics for each discovered queue
 - Configurable UI support to visualize bull queues (Bull Board or Arena)
 
-## screenshots
-
-
-
-![](screenshots/swagger-ui.png)
-
-
 ## getting started
 
 To get started:
@@ -29,7 +22,7 @@ bull-exporter:
     REDIS_HOST: <your redis host>
     REDIS_PORT: <your redis port>
     PORT: 3000
-    UI: bull-board # or arena
+    UI: bull-board # options: arena, bull-board
 ```
 
 You can then create a sample job like this (assuming redis is running at `127.0.0.1:6001`):
@@ -67,6 +60,21 @@ queue.add({someParam: 'someValue'}, {attempts: 2});
 ```
 
 The example above creates a job queue called `send-email` with processing code that fails randomly. It creates a single job and attempts it up to 4 times.
+
+## What's where?
+If you're running this example then bull exporter should be running at `localhost:3000` and have the following endpoints available:
+- `/metrics`
+- `/health`
+- `/api` - swagger documentation of available endpoints
+- `/queues` - UI for bull
+
+Other services (`docker compose up -d` to run everything):
+- localhost:3000 - Bull Monitor (this project!)
+- localhost:6002 - SMTP (anonymous allowed)
+- localhost:6003 - SMTP Web UI (username: `test`, password: `test`)
+- localhost:3001 - Grafana
+- localhost:3002 - Prometheus
+
 ## prometheus metrics
 For each queue that is created  the following metrics are automatically tracked.
 
@@ -81,25 +89,43 @@ For each queue that is created  the following metrics are automatically tracked.
 | jobs_waiting_duration_milliseconds  | summary | Waiting time for completed/failed                       |
 | jobs_attempts                       | summary | Processing time for completed/failed/jobs               |
 
-You can configure:
-- Refresh queue metrics (default is every 60 seconds)
-- Job specific durations are reflected right away
-- Labels available
+Things to note about these metrics:
 - Queue metrics are GLOBAL not worker specific
+- Queue metrics are refreshed every 60 seconds. To change this simply you'll need to set environment variable `BULL_COLLECT_QUEUE_METRICS_INTERVAL_MS` to another value.
+- Available prometheus labels: `queue_name`, `queue_prefix`, `status`
 
+An example of the exposed metrics endpoint:
 ![](screenshots/prometheus-metrics.png)
 
-Grafana integration
-- Locally you can setup prometheus and grafana to simulate what these metrics would look like. See `docker-compose.yml` for an example
+Note that you can integrate this with Grafana to set up things like alerts. If you want to try this out locally this repo contains all the wiring needed for grafana. To use that:
+
+```
+docker compose up -d grafana bull-exporter
+```
+
+This will launch grafana on `localhost:3001` (anonymous login).
+
 ![](screenshots/grafana-ui.png)
 ## bull ui
 There are 2 options currently available for UIs: bull-board and arena.
+
+### bull-board
+From: https://github.com/felixmosh/bull-board#readme. This is the default UI. If you want to be explicit just set `UI` environment variable to `bull-board`.
+
 ![](screenshots/bull-board-ui.png)
+
+### bull-arena
+From: https://github.com/bee-queue/arena. To use this UI you'll need to set the `UI` environment variable to `arena`.
+
 ![](screenshots/arena-ui.png)
 
-https://github.com/felixmosh/bull-board#readme
-https://github.com/bee-queue/arena
+## security considerations
+- This is intended as a back office monitoring solution. You should not make expose this publicly
+- This is currently intended to run as a single process and should not be scaled horizontally (future todo item)
+
 ## todo
+A non-exhaustive list of some things that would be nice to have in the future. PRs welcome!
+
 - Config namespace events - how to ensure this is properly set????
 - Clusters - ensure we can scan all queues in a cluster
 - Docker container creation
@@ -117,27 +143,3 @@ https://github.com/bee-queue/arena
 - ncc compilation
 - error handling (what happens about job event replay if we get disconnected?)
 - whitelabeling
-
-## security considerations
-- Should not be publically accessible in production environment
-- Single threaded should not scale
-
-If you want to also run prometheus and grafana:
-
-  docker compose up -d grafana
-
-What's where?
-- `/metrics`
-- `/health`
-- `/api` - swagger documentation of available endpoints
-- `/queues` - UI for bull
-
-Other services:
-- localhost:3000 - bull exporter
-- localhost:6002 - smtp
-- localhost:6003 - SMTP Web UI (username: test, password: test)
-- localhost:3001 - grafana
-- localhost:3002 - prometheus
-
-# contributing
-- Open a PR

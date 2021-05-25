@@ -22,6 +22,7 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       PORT: 3000
+      #UI: arena
   grafana:
     image: grafana/grafana:latest
     environment: 
