@@ -9,7 +9,7 @@
     "prebuild": "rimraf dist",
     "build": "nest build",
     "ci:build": "npm run build && docker-compose build bull-monitor",
-    "ci:publish": "npm run ci:build && docker compose push bull-monitor",
+    "ci:publish": "npm run ci:build && docker-compose push bull-monitor",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "services:start": "docker-compose up -d grafana",
     "services:start:all": "docker-compose up -d grafana bull-monitor",
