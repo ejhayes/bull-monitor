@@ -6,7 +6,7 @@ on:
     - main
 
 jobs:
-  login:
+  publish:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -39,4 +39,4 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
           repository: ejhayes/nodejs-bull-monitor
-          shortDescription: 'All in one bull monitoring and reporting utility'
+          short-description: 'All in one bull monitoring and reporting utility'
