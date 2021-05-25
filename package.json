@@ -97,7 +97,8 @@
     "collectCoverageFrom": [
       "src/**/*.(t|j)s"
     ],
-    "coverageDirectory": "../coverage",
+    "coverageReporters": ["text","lcov"],
+    "coverageDirectory": "./coverage",
     "testEnvironment": "node"
   }
 }
