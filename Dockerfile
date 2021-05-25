@@ -1,13 +1,13 @@
 FROM node:14-alpine as build
 WORKDIR /app
 RUN apk add --no-cache openssh git
-COPY package* .
+COPY package* ./
 RUN npm install --production
-COPY dist .
+COPY dist ./
 
 FROM node:14-alpine
 WORKDIR /app
-COPY --from=build /app .
+COPY --from=build /app ./
 ARG BUILD_VERSION
 ARG LOG_LEVEL=info
 ARG LOG_LABEL=bull-monitor
