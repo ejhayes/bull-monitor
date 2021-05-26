@@ -7,6 +7,19 @@ This is an all-in-one tool to help you visualize and report on bull! It runs as 
 - Automatic configuration of prometheus metrics for each discovered queue
 - Configurable UI support to visualize bull queues (Bull Board or Arena)
 
+You can test it out with docker by running (if you want to access something running on your host machine and not within the docker network you can use the special hostname [`host.docker.internal`](https://docs.docker.com/docker-for-mac/networking/#use-cases-and-workarounds)):
+
+```sh
+docker run -d --rm \
+  --name bull-monitor \
+  -e "REDIS_HOST=host.docker.internal" \
+  -e "REDIS_PORT=6001" \
+  -e "PORT=3000" \
+  -e "BULL_WATCH_QUEUE_PREFIXES=bull" \
+  -p 3000:3000 \
+  ejhayes/nodejs-bull-monitor:latest
+```
+
 To use with docker compose, add the following to `docker-compose.yml`:
 
 ```yml
