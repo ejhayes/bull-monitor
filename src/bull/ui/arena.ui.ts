@@ -1,7 +1,7 @@
 import { ConfigService } from '@app/config/config.service';
 import { LoggerService } from '@app/logger';
-import Bull from 'bull';
 import Arena from 'bull-arena';
+import { Queue } from 'bullmq';
 import { IBullUi } from '../bull.interfaces';
 
 type BullArenaQueue = Parameters<typeof Arena>[0]['queues'][0];
@@ -21,7 +21,9 @@ interface BullArenaLocals {
 }
 
 enum QUEUE_TYPES {
+  BEE = 'bee',
   BULL = 'bull',
+  BULLMQ = 'bullmq',
 }
 
 export class BullArenaUi implements IBullUi {
@@ -33,7 +35,7 @@ export class BullArenaUi implements IBullUi {
   ) {
     this._ui = Arena(
       {
-        Bull,
+        BullMQ: Queue,
         queues: [
           {
             hostId: '',
@@ -42,7 +44,7 @@ export class BullArenaUi implements IBullUi {
               host: '',
               port: 0,
             },
-            type: QUEUE_TYPES.BULL,
+            type: QUEUE_TYPES.BULLMQ,
           },
         ],
       },
@@ -56,7 +58,7 @@ export class BullArenaUi implements IBullUi {
     ((this._ui as any).locals as BullArenaLocals).Queues._config.queues = [];
   }
 
-  addQueue(queuePrefix: string, queueName: string, queue: Bull.Queue) {
+  addQueue(queuePrefix: string, queueName: string, queue: Queue) {
     ((this._ui as any).locals as BullArenaLocals).Queues._config.queues.push({
       hostId: queuePrefix,
       name: queueName,

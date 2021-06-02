@@ -4,9 +4,9 @@ import { Injectable } from '@nestjs/common';
 import { Job, Queue, QueueEvents } from 'bullmq';
 
 enum LABEL_NAMES {
-  QUEUE_NAME = 'queue_name',
-  JOB_NAME = 'job_name',
   FAIL_TYPE = 'fail_type',
+  JOB_NAME = 'job_name',
+  QUEUE_NAME = 'queue_name',
   QUEUE_PREFIX = 'queue_prefix',
   STATUS = 'status',
 }
@@ -47,6 +47,51 @@ export class BullMQMetricsFactory {
     @InjectMetrics()
     metricsService: MetricsService,
   ) {
+    this.jobs_active_total = metricsService.createGauge({
+      name: 'jobs_active_total',
+      help: 'Total active jobs',
+      labelNames: [
+        LABEL_NAMES.QUEUE_PREFIX,
+        LABEL_NAMES.QUEUE_NAME,
+        LABEL_NAMES.JOB_NAME,
+      ],
+    });
+    this.jobs_completed_total = metricsService.createGauge({
+      name: 'jobs_completed_total',
+      help: 'Total completed jobs',
+      labelNames: [
+        LABEL_NAMES.QUEUE_PREFIX,
+        LABEL_NAMES.QUEUE_NAME,
+        LABEL_NAMES.JOB_NAME,
+      ],
+    });;
+    this.jobs_failed_total = metricsService.createGauge({
+      name: 'jobs_failed_total',
+      help: 'Total failed jobs',
+      labelNames: [
+        LABEL_NAMES.QUEUE_PREFIX,
+        LABEL_NAMES.QUEUE_NAME,
+        LABEL_NAMES.JOB_NAME,
+      ],
+    });;
+    this.jobs_waiting_total = metricsService.createGauge({
+      name: 'jobs_waiting_total',
+      help: 'Total waiting jobs',
+      labelNames: [
+        LABEL_NAMES.QUEUE_PREFIX,
+        LABEL_NAMES.QUEUE_NAME,
+        LABEL_NAMES.JOB_NAME,
+      ],
+    });;
+    this.jobs_delayed_total = metricsService.createGauge({
+      name: 'jobs_delayed_total',
+      help: 'Total delayed jobs',
+      labelNames: [
+        LABEL_NAMES.QUEUE_PREFIX,
+        LABEL_NAMES.QUEUE_NAME,
+        LABEL_NAMES.JOB_NAME,
+      ],
+    });;
     this.jobs_active = metricsService.createCounter({
       name: 'jobs_active',
       help: 'Number of active jobs',
@@ -123,8 +168,8 @@ export class BullMQMetricsFactory {
       ],
     });
     this.job_attempts = metricsService.createSummary({
-      name: 'job_duration',
-      help: 'Job duration',
+      name: 'job_attempts',
+      help: 'Job attempts',
       labelNames: [
         LABEL_NAMES.QUEUE_PREFIX,
         LABEL_NAMES.QUEUE_NAME,
@@ -168,64 +213,56 @@ export class BullMQMetricsFactory {
       },
     });
 
-    queueEvents.on('stalled', async (jobId: string) => {
-      const job = await queue.getJob(jobId);
+    queueEvents.on('stalled', async (event) => {
+      const job = await queue.getJob(event.jobId);
       const jobLabels = {
         [LABEL_NAMES.JOB_NAME]: job.name,
         ...labels,
       };
       this.jobs_stalled.inc(jobLabels, 1);
     });
-    queueEvents.on('active', async (jobId: string) => {
-      const job = await queue.getJob(jobId);
+    queueEvents.on('active', async (event) => {
+      const job = await queue.getJob(event.jobId);
       const jobLabels = {
         [LABEL_NAMES.JOB_NAME]: job.name,
         ...labels,
       };
       this.jobs_active.inc(jobLabels, 1);
     });
-    queueEvents.on('waiting', async (jobId: string) => {
-      const job = await queue.getJob(jobId);
+    queueEvents.on('waiting', async (event) => {
+      const job = await queue.getJob(event.jobId);
       const jobLabels = {
         [LABEL_NAMES.JOB_NAME]: job.name,
         ...labels,
       };
       this.jobs_waiting.inc(jobLabels, 1);
     });
-    queueEvents.on('failed', async (jobId: string, failedReason: string) => {
-      const job = await queue.getJob(jobId);
+    queueEvents.on('failed', async (event) => {
+      const job = await queue.getJob(event.jobId);
       const jobLabels = {
         [LABEL_NAMES.JOB_NAME]: job.name,
-        [LABEL_NAMES.FAIL_TYPE]: failedReason,
+        [LABEL_NAMES.FAIL_TYPE]: event.failedReason,
         ...labels,
       };
       this.jobs_failed.inc(jobLabels, 1);
-      this.recordJobMetrics(
-        labels,
-        STATUS_TYPES.FAILED,
-        await queue.getJob(jobId),
-      );
+      this.recordJobMetrics(labels, STATUS_TYPES.FAILED, job);
     });
-    queueEvents.on('delayed', async (jobId: string) => {
-      const job = await queue.getJob(jobId);
+    queueEvents.on('delayed', async (event) => {
+      const job = await queue.getJob(event.jobId);
       const jobLabels = {
         [LABEL_NAMES.JOB_NAME]: job.name,
         ...labels,
       };
       this.jobs_delayed.inc(jobLabels, 1);
     });
-    queueEvents.on('completed', async (jobId: string) => {
-      const job = await queue.getJob(jobId);
+    queueEvents.on('completed', async (event) => {
+      const job = await queue.getJob(event.jobId);
       const jobLabels = {
         [LABEL_NAMES.JOB_NAME]: job.name,
         ...labels,
       };
       this.jobs_completed.inc(jobLabels, 1);
-      this.recordJobMetrics(
-        labels,
-        STATUS_TYPES.COMPLETED,
-        await queue.getJob(jobId),
-      );
+      this.recordJobMetrics(labels, STATUS_TYPES.COMPLETED, job);
     });
 
     const metricInterval = setInterval(async () => {

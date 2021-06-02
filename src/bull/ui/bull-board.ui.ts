@@ -1,6 +1,6 @@
-import { Queue } from 'bull';
+import { Queue } from 'bullmq';
 import { createBullBoard } from 'bull-board';
-import { BullAdapter } from 'bull-board/bullAdapter';
+import { BullMQAdapter } from 'bull-board/bullMQAdapter';
 import { ConfigService } from '../../config/config.service';
 import { LoggerService } from '../../logger';
 import { IBullUi } from '../bull.interfaces';
@@ -13,7 +13,7 @@ import { IBullUi } from '../bull.interfaces';
  * setQueues and replaceQueues but they seem a bit heavy handed
  */
 interface BullBoardLocals {
-  bullBoardQueues: Map<string, BullAdapter>;
+  bullBoardQueues: Map<string, BullMQAdapter>;
 }
 
 export class BullBoardUi implements IBullUi {
@@ -30,7 +30,7 @@ export class BullBoardUi implements IBullUi {
     const queueKey = `${queuePrefix}:${queueName}`;
     (this._ui.router.locals as BullBoardLocals).bullBoardQueues.set(
       queueKey,
-      new BullAdapter(queue),
+      new BullMQAdapter(queue),
     );
   }
 
