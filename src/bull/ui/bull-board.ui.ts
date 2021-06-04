@@ -1,6 +1,6 @@
-import { Queue } from 'bullmq';
 import { createBullBoard } from 'bull-board';
 import { BullMQAdapter } from 'bull-board/bullMQAdapter';
+import { Queue } from 'bullmq';
 import { ConfigService } from '../../config/config.service';
 import { LoggerService } from '../../logger';
 import { IBullUi } from '../bull.interfaces';

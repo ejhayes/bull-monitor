@@ -16,9 +16,9 @@ import { ConfigModule } from '@app/config/config.module';
 import { ConfigService } from '@app/config/config.service';
 import { LoggerModule, LoggerService } from '@app/logger';
 import { Test } from '@nestjs/testing';
-import Bull from 'bull';
 import Arena from 'bull-arena';
 import ArenaQueue from 'bull-arena/src/server/queue';
+import { Queue } from 'bullmq';
 import { BullArenaUi } from './arena.ui';
 
 describe(BullArenaUi, () => {
@@ -46,7 +46,7 @@ describe(BullArenaUi, () => {
     expect(Arena).toHaveBeenCalledTimes(1);
     expect(Arena).toBeCalledWith(
       {
-        Bull: Bull,
+        BullMQ: Queue,
         queues: [
           {
             hostId: '',
@@ -55,7 +55,7 @@ describe(BullArenaUi, () => {
               host: '',
               port: 0,
             },
-            type: 'bull',
+            type: 'bullmq',
           },
         ],
       },
@@ -68,7 +68,7 @@ describe(BullArenaUi, () => {
   });
 
   it('adds a queue', async () => {
-    const testQueue = new Bull('test');
+    const testQueue = new Queue('test');
     arenaUi.addQueue('test', 'test', testQueue);
     //expect(ArenaQueue).toBeCalledWith([1])
     // TODO: expect one queue

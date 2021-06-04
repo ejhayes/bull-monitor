@@ -4,7 +4,7 @@ import { Injectable } from '@nestjs/common';
 import { Job, Queue, QueueEvents } from 'bullmq';
 
 enum LABEL_NAMES {
-  FAIL_TYPE = 'fail_type',
+  ERROR_TYPE = 'error_type',
   JOB_NAME = 'job_name',
   QUEUE_NAME = 'queue_name',
   QUEUE_PREFIX = 'queue_prefix',
@@ -50,48 +50,28 @@ export class BullMQMetricsFactory {
     this.jobs_active_total = metricsService.createGauge({
       name: 'jobs_active_total',
       help: 'Total active jobs',
-      labelNames: [
-        LABEL_NAMES.QUEUE_PREFIX,
-        LABEL_NAMES.QUEUE_NAME,
-        LABEL_NAMES.JOB_NAME,
-      ],
+      labelNames: [LABEL_NAMES.QUEUE_PREFIX, LABEL_NAMES.QUEUE_NAME],
     });
     this.jobs_completed_total = metricsService.createGauge({
       name: 'jobs_completed_total',
       help: 'Total completed jobs',
-      labelNames: [
-        LABEL_NAMES.QUEUE_PREFIX,
-        LABEL_NAMES.QUEUE_NAME,
-        LABEL_NAMES.JOB_NAME,
-      ],
-    });;
+      labelNames: [LABEL_NAMES.QUEUE_PREFIX, LABEL_NAMES.QUEUE_NAME],
+    });
     this.jobs_failed_total = metricsService.createGauge({
       name: 'jobs_failed_total',
       help: 'Total failed jobs',
-      labelNames: [
-        LABEL_NAMES.QUEUE_PREFIX,
-        LABEL_NAMES.QUEUE_NAME,
-        LABEL_NAMES.JOB_NAME,
-      ],
-    });;
+      labelNames: [LABEL_NAMES.QUEUE_PREFIX, LABEL_NAMES.QUEUE_NAME],
+    });
     this.jobs_waiting_total = metricsService.createGauge({
       name: 'jobs_waiting_total',
       help: 'Total waiting jobs',
-      labelNames: [
-        LABEL_NAMES.QUEUE_PREFIX,
-        LABEL_NAMES.QUEUE_NAME,
-        LABEL_NAMES.JOB_NAME,
-      ],
-    });;
+      labelNames: [LABEL_NAMES.QUEUE_PREFIX, LABEL_NAMES.QUEUE_NAME],
+    });
     this.jobs_delayed_total = metricsService.createGauge({
       name: 'jobs_delayed_total',
       help: 'Total delayed jobs',
-      labelNames: [
-        LABEL_NAMES.QUEUE_PREFIX,
-        LABEL_NAMES.QUEUE_NAME,
-        LABEL_NAMES.JOB_NAME,
-      ],
-    });;
+      labelNames: [LABEL_NAMES.QUEUE_PREFIX, LABEL_NAMES.QUEUE_NAME],
+    });
     this.jobs_active = metricsService.createCounter({
       name: 'jobs_active',
       help: 'Number of active jobs',
@@ -117,7 +97,7 @@ export class BullMQMetricsFactory {
         LABEL_NAMES.QUEUE_PREFIX,
         LABEL_NAMES.QUEUE_NAME,
         LABEL_NAMES.JOB_NAME,
-        LABEL_NAMES.FAIL_TYPE,
+        LABEL_NAMES.ERROR_TYPE,
       ],
     });
     this.jobs_completed = metricsService.createCounter({
@@ -155,6 +135,7 @@ export class BullMQMetricsFactory {
         LABEL_NAMES.QUEUE_NAME,
         LABEL_NAMES.JOB_NAME,
         LABEL_NAMES.STATUS,
+        LABEL_NAMES.ERROR_TYPE,
       ],
     });
     this.job_wait_duration = metricsService.createSummary({
@@ -165,6 +146,7 @@ export class BullMQMetricsFactory {
         LABEL_NAMES.QUEUE_NAME,
         LABEL_NAMES.JOB_NAME,
         LABEL_NAMES.STATUS,
+        LABEL_NAMES.ERROR_TYPE,
       ],
     });
     this.job_attempts = metricsService.createSummary({
@@ -175,6 +157,7 @@ export class BullMQMetricsFactory {
         LABEL_NAMES.QUEUE_NAME,
         LABEL_NAMES.JOB_NAME,
         LABEL_NAMES.STATUS,
+        LABEL_NAMES.ERROR_TYPE,
       ],
     });
   }
@@ -189,9 +172,6 @@ export class BullMQMetricsFactory {
     }
     const jobLabels = {
       [LABEL_NAMES.STATUS]: status,
-      ...(status == STATUS_TYPES.FAILED
-        ? { [LABEL_NAMES.FAIL_TYPE]: job.failedReason }
-        : {}),
       ...labels,
     };
     const jobDuration = job.finishedOn - job.processedOn;
@@ -239,13 +219,16 @@ export class BullMQMetricsFactory {
     });
     queueEvents.on('failed', async (event) => {
       const job = await queue.getJob(event.jobId);
+      const errorType = job.stacktrace[job.stacktrace.length - 1]?.match(
+        /^(?<errorType>[^:]+):/,
+      )?.groups?.errorType;
       const jobLabels = {
         [LABEL_NAMES.JOB_NAME]: job.name,
-        [LABEL_NAMES.FAIL_TYPE]: event.failedReason,
+        [LABEL_NAMES.ERROR_TYPE]: errorType,
         ...labels,
       };
       this.jobs_failed.inc(jobLabels, 1);
-      this.recordJobMetrics(labels, STATUS_TYPES.FAILED, job);
+      this.recordJobMetrics(jobLabels, STATUS_TYPES.FAILED, job);
     });
     queueEvents.on('delayed', async (event) => {
       const job = await queue.getJob(event.jobId);
@@ -262,7 +245,7 @@ export class BullMQMetricsFactory {
         ...labels,
       };
       this.jobs_completed.inc(jobLabels, 1);
-      this.recordJobMetrics(labels, STATUS_TYPES.COMPLETED, job);
+      this.recordJobMetrics(jobLabels, STATUS_TYPES.COMPLETED, job);
     });
 
     const metricInterval = setInterval(async () => {

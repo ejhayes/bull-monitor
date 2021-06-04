@@ -67,7 +67,7 @@ export class BullArenaUi implements IBullUi {
         host: this.configService.config.REDIS_HOST,
         port: this.configService.config.REDIS_PORT,
       },
-      type: QUEUE_TYPES.BULL,
+      type: QUEUE_TYPES.BULLMQ,
     });
   }
 

@@ -163,82 +163,249 @@ For each queue that is created  the following metrics are automatically tracked.
 
 | Metric                              | type    | description                                             |
 |-------------------------------------|---------|---------------------------------------------------------|
-| jobs_completed_total                | counter | Total number of completed jobs                          |
-| jobs_active_total                   | counter | Total number of active jobs (currently being processed) |
-| jobs_delayed_total                  | counter | Total number of jobs that will run in the future        |
-| jobs_failed_total                   | counter | Total number of failed jobs                             |
-| jobs_waiting_total                  | counter | Total number of jobs waiting to be processed            |
-| jobs_duration_milliseconds          | summary | Processing time for completed/failed                    |
-| jobs_waiting_duration_milliseconds  | summary | Waiting time for completed/failed                       |
-| jobs_attempts                       | summary | Processing time for completed/failed/jobs               |
+| `jobs_completed_total` | `gauge` | Total number of completed jobs |
+| `jobs_failed_total` | `gauge` | Total number of failed jobs |
+| `jobs_delayed_total` | `gauge` | Total number of delayed jobs |
+| `jobs_active_total` | `gauge` | Total number of active jobs |
+| `jobs_waiting_total` | `gauge` | Total number of waiting jobs |
+| `jobs_active` | `counter` | Jobs active |
+| `jobs_waiting` | `counter` | Jobs waiting |
+| `jobs_stalled` | `counter` | Jobs stalled |
+| `jobs_failed` | `counter` | Jobs failed |
+| `jobs_completed` | `counter` | Jobs completed |
+| `jobs_delayed` | `counter` | Jobs delayed |
+| `job_duration` | `summary` | Processing time for completed/failed jobs |
+| `job_wait_duration` | `summary` | Durating spent waiting for job to start |
+| `job_attempts` | `summary` | Number of attempts made before job completed/failed |
+
+The following labels are available:
+
+| Label Name | Description |
+|-|-|
+| `queue_prefix` | Queue Prefix |
+| `queue_name` | Queue Name |
+| `job_name` | Job name |
+| `status` | Job status (choiced: `completed`, `failed`) |
+| `error_type` | Error type (uses error class name) |
 
 Things to note about these metrics:
 - Queue metrics are GLOBAL not worker specific
-- Queue metrics are refreshed every 60 seconds. To change this simply you'll need to set environment variable `BULL_COLLECT_QUEUE_METRICS_INTERVAL_MS` to another value.
-- Available prometheus labels: `queue_name`, `queue_prefix`, `status`
+- Gauge metrics (`*_total`) are refreshed every 60 seconds. To change this you'll need to set environment variable `BULL_COLLECT_QUEUE_METRICS_INTERVAL_MS` to another value.
 
 An example of the exposed metrics endpoint:
 ```
-# HELP jobs_completed_total Number of completed jobs
-# TYPE jobs_completed_total gauge
-jobs_completed_total{queue_name="DAILY_EMAILS",queue_prefix="bull"} 555
-
-# HELP jobs_failed_total Number of failed jobs
-# TYPE jobs_failed_total gauge
-jobs_failed_total{queue_name="DAILY_EMAILS",queue_prefix="bull"} 0
-
-# HELP jobs_delayed_total Number of delayed jobs
-# TYPE jobs_delayed_total gauge
-jobs_delayed_total{queue_name="DAILY_EMAILS",queue_prefix="bull"} 739
-
-# HELP jobs_active_total Number of active jobs
+# HELP jobs_active_total Total active jobs
 # TYPE jobs_active_total gauge
-jobs_active_total{queue_name="DAILY_EMAILS",queue_prefix="bull"} 0
+jobs_active_total{queue_prefix="bull",queue_name="api_v1"} 93
+jobs_active_total{queue_prefix="bull",queue_name="api_v2"} 0
 
-# HELP jobs_waiting_total Number of waiting jobs
+# HELP jobs_completed_total Total completed jobs
+# TYPE jobs_completed_total gauge
+jobs_completed_total{queue_prefix="bull",queue_name="api_v1"} 3058
+jobs_completed_total{queue_prefix="bull",queue_name="api_v2"} 2981
+
+# HELP jobs_failed_total Total failed jobs
+# TYPE jobs_failed_total gauge
+jobs_failed_total{queue_prefix="bull",queue_name="api_v1"} 1004
+jobs_failed_total{queue_prefix="bull",queue_name="api_v2"} 1040
+
+# HELP jobs_waiting_total Total waiting jobs
 # TYPE jobs_waiting_total gauge
-jobs_waiting_total{queue_name="DAILY_EMAILS",queue_prefix="bull"} 0
+jobs_waiting_total{queue_prefix="bull",queue_name="api_v1"} 41004
+jobs_waiting_total{queue_prefix="bull",queue_name="api_v2"} 8439
 
-# HELP jobs_duration_milliseconds Time to complete jobs
-# TYPE jobs_duration_milliseconds summary
-jobs_duration_milliseconds{quantile="0.01",status="completed",queue_name="test2",queue_prefix="bull"} 15.44
-jobs_duration_milliseconds{quantile="0.05",status="completed",queue_name="test2",queue_prefix="bull"} 36.00000000000001
-jobs_duration_milliseconds{quantile="0.5",status="completed",queue_name="test2",queue_prefix="bull"} 2268
-jobs_duration_milliseconds{quantile="0.9",status="completed",queue_name="test2",queue_prefix="bull"} 4190.2
-jobs_duration_milliseconds{quantile="0.95",status="completed",queue_name="test2",queue_prefix="bull"} 4343.4
-jobs_duration_milliseconds{quantile="0.99",status="completed",queue_name="test2",queue_prefix="bull"} 4807.149999999999
-jobs_duration_milliseconds{quantile="0.999",status="completed",queue_name="test2",queue_prefix="bull"} 4844
-jobs_duration_milliseconds_sum{status="completed",queue_name="test2",queue_prefix="bull"} 130904
-jobs_duration_milliseconds_count{status="completed",queue_name="test2",queue_prefix="bull"} 61
+# HELP jobs_delayed_total Total delayed jobs
+# TYPE jobs_delayed_total gauge
+jobs_delayed_total{queue_prefix="bull",queue_name="api_v1"} 67038
+jobs_delayed_total{queue_prefix="bull",queue_name="api_v2"} 122
 
-# HELP jobs_waiting_duration_milliseconds Time spent waiting for a job to run
-# TYPE jobs_waiting_duration_milliseconds summary
-jobs_waiting_duration_milliseconds{quantile="0.01",status="completed",queue_name="test2",queue_prefix="bull"} 15317.1
-jobs_waiting_duration_milliseconds{quantile="0.05",status="completed",queue_name="test2",queue_prefix="bull"} 15482.55
-jobs_waiting_duration_milliseconds{quantile="0.5",status="completed",queue_name="test2",queue_prefix="bull"} 18996
-jobs_waiting_duration_milliseconds{quantile="0.9",status="completed",queue_name="test2",queue_prefix="bull"} 22566.600000000002
-jobs_waiting_duration_milliseconds{quantile="0.95",status="completed",queue_name="test2",queue_prefix="bull"} 23332.15
-jobs_waiting_duration_milliseconds{quantile="0.99",status="completed",queue_name="test2",queue_prefix="bull"} 24662.649999999994
-jobs_waiting_duration_milliseconds{quantile="0.999",status="completed",queue_name="test2",queue_prefix="bull"} 24826
-jobs_waiting_duration_milliseconds_sum{status="completed",queue_name="test2",queue_prefix="bull"} 1159713
-jobs_waiting_duration_milliseconds_count{status="completed",queue_name="test2",queue_prefix="bull"} 61
+# HELP jobs_active Number of active jobs
+# TYPE jobs_active counter
+jobs_active{job_name="generate_report",queue_prefix="bull",queue_name="api_v1"} 21
+jobs_active{job_name="webhook_notification",queue_prefix="bull",queue_name="api_v1"} 18
+jobs_active{job_name="send_email",queue_prefix="bull",queue_name="api_v1"} 21
 
-# HELP jobs_attempts Job attempts made
-# TYPE jobs_attempts summary
-jobs_attempts{quantile="0.01",status="completed",queue_name="test2",queue_prefix="bull"} 0
-jobs_attempts{quantile="0.05",status="completed",queue_name="test2",queue_prefix="bull"} 0
-jobs_attempts{quantile="0.5",status="completed",queue_name="test2",queue_prefix="bull"} 0
-jobs_attempts{quantile="0.9",status="completed",queue_name="test2",queue_prefix="bull"} 0
-jobs_attempts{quantile="0.95",status="completed",queue_name="test2",queue_prefix="bull"} 0
-jobs_attempts{quantile="0.99",status="completed",queue_name="test2",queue_prefix="bull"} 0
-jobs_attempts{quantile="0.999",status="completed",queue_name="test2",queue_prefix="bull"} 0
-jobs_attempts_sum{status="completed",queue_name="test2",queue_prefix="bull"} 0
-jobs_attempts_count{status="completed",queue_name="test2",queue_prefix="bull"} 61
+# HELP jobs_waiting Number of waiting jobs
+# TYPE jobs_waiting counter
+jobs_waiting{job_name="webhook_notification",queue_prefix="bull",queue_name="api_v1"} 12446
+jobs_waiting{job_name="send_email",queue_prefix="bull",queue_name="api_v1"} 12778
+jobs_waiting{job_name="generate_report",queue_prefix="bull",queue_name="api_v1"} 12767
+jobs_waiting{job_name="webhook_notification",queue_prefix="bull",queue_name="api_v2"} 1800
+jobs_waiting{job_name="send_email",queue_prefix="bull",queue_name="api_v2"} 2242
+jobs_waiting{job_name="generate_report",queue_prefix="bull",queue_name="api_v2"} 2402
+
+# HELP jobs_failed Number of failed jobs
+# TYPE jobs_failed counter
+jobs_failed{job_name="webhook_notification",error_type="Error",queue_prefix="bull",queue_name="api_v1"} 2
+jobs_failed{job_name="webhook_notification",error_type="SomeError",queue_prefix="bull",queue_name="api_v1"} 1
+
+# HELP jobs_completed Number of completed jobs
+# TYPE jobs_completed counter
+jobs_completed{job_name="webhook_notification",queue_prefix="bull",queue_name="api_v1"} 3
+jobs_completed{job_name="generate_report",queue_prefix="bull",queue_name="api_v1"} 4
+jobs_completed{job_name="send_email",queue_prefix="bull",queue_name="api_v1"} 1
+
+# HELP jobs_stalled Number of stalled jobs
+# TYPE jobs_stalled counter
+
+# HELP jobs_delayed Number of delayed jobs
+# TYPE jobs_delayed counter
+jobs_delayed{job_name="generate_report",queue_prefix="bull",queue_name="api_v1"} 516
+jobs_delayed{job_name="send_email",queue_prefix="bull",queue_name="api_v1"} 515
+jobs_delayed{job_name="webhook_notification",queue_prefix="bull",queue_name="api_v1"} 460
+
+# HELP job_duration Job duration
+# TYPE job_duration summary
+job_duration{quantile="0.01",status="failed",job_name="webhook_notification",error_type="Error",queue_prefix="bull",queue_name="api_v1"} 745
+job_duration{quantile="0.05",status="failed",job_name="webhook_notification",error_type="Error",queue_prefix="bull",queue_name="api_v1"} 745
+job_duration{quantile="0.5",status="failed",job_name="webhook_notification",error_type="Error",queue_prefix="bull",queue_name="api_v1"} 774
+job_duration{quantile="0.9",status="failed",job_name="webhook_notification",error_type="Error",queue_prefix="bull",queue_name="api_v1"} 803
+job_duration{quantile="0.95",status="failed",job_name="webhook_notification",error_type="Error",queue_prefix="bull",queue_name="api_v1"} 803
+job_duration{quantile="0.99",status="failed",job_name="webhook_notification",error_type="Error",queue_prefix="bull",queue_name="api_v1"} 803
+job_duration{quantile="0.999",status="failed",job_name="webhook_notification",error_type="Error",queue_prefix="bull",queue_name="api_v1"} 803
+job_duration_sum{status="failed",job_name="webhook_notification",error_type="Error",queue_prefix="bull",queue_name="api_v1"} 1548
+job_duration_count{status="failed",job_name="webhook_notification",error_type="Error",queue_prefix="bull",queue_name="api_v1"} 2
+job_duration{quantile="0.01",status="completed",job_name="webhook_notification",queue_prefix="bull",queue_name="api_v1"} 1091
+job_duration{quantile="0.05",status="completed",job_name="webhook_notification",queue_prefix="bull",queue_name="api_v1"} 1091
+job_duration{quantile="0.5",status="completed",job_name="webhook_notification",queue_prefix="bull",queue_name="api_v1"} 1638
+job_duration{quantile="0.9",status="completed",job_name="webhook_notification",queue_prefix="bull",queue_name="api_v1"} 1667
+job_duration{quantile="0.95",status="completed",job_name="webhook_notification",queue_prefix="bull",queue_name="api_v1"} 1667
+job_duration{quantile="0.99",status="completed",job_name="webhook_notification",queue_prefix="bull",queue_name="api_v1"} 1667
+job_duration{quantile="0.999",status="completed",job_name="webhook_notification",queue_prefix="bull",queue_name="api_v1"} 1667
+job_duration_sum{status="completed",job_name="webhook_notification",queue_prefix="bull",queue_name="api_v1"} 4396
+job_duration_count{status="completed",job_name="webhook_notification",queue_prefix="bull",queue_name="api_v1"} 3
+job_duration{quantile="0.01",status="completed",job_name="generate_report",queue_prefix="bull",queue_name="api_v1"} 1274
+job_duration{quantile="0.05",status="completed",job_name="generate_report",queue_prefix="bull",queue_name="api_v1"} 1274
+job_duration{quantile="0.5",status="completed",job_name="generate_report",queue_prefix="bull",queue_name="api_v1"} 1968.5
+job_duration{quantile="0.9",status="completed",job_name="generate_report",queue_prefix="bull",queue_name="api_v1"} 2460
+job_duration{quantile="0.95",status="completed",job_name="generate_report",queue_prefix="bull",queue_name="api_v1"} 2460
+job_duration{quantile="0.99",status="completed",job_name="generate_report",queue_prefix="bull",queue_name="api_v1"} 2460
+job_duration{quantile="0.999",status="completed",job_name="generate_report",queue_prefix="bull",queue_name="api_v1"} 2460
+job_duration_sum{status="completed",job_name="generate_report",queue_prefix="bull",queue_name="api_v1"} 7671
+job_duration_count{status="completed",job_name="generate_report",queue_prefix="bull",queue_name="api_v1"} 4
+job_duration{quantile="0.01",status="completed",job_name="send_email",queue_prefix="bull",queue_name="api_v1"} 1915
+job_duration{quantile="0.05",status="completed",job_name="send_email",queue_prefix="bull",queue_name="api_v1"} 1915
+job_duration{quantile="0.5",status="completed",job_name="send_email",queue_prefix="bull",queue_name="api_v1"} 1915
+job_duration{quantile="0.9",status="completed",job_name="send_email",queue_prefix="bull",queue_name="api_v1"} 1915
+job_duration{quantile="0.95",status="completed",job_name="send_email",queue_prefix="bull",queue_name="api_v1"} 1915
+job_duration{quantile="0.99",status="completed",job_name="send_email",queue_prefix="bull",queue_name="api_v1"} 1915
+job_duration{quantile="0.999",status="completed",job_name="send_email",queue_prefix="bull",queue_name="api_v1"} 1915
+job_duration_sum{status="completed",job_name="send_email",queue_prefix="bull",queue_name="api_v1"} 1915
+job_duration_count{status="completed",job_name="send_email",queue_prefix="bull",queue_name="api_v1"} 1
+job_duration{quantile="0.01",status="failed",job_name="webhook_notification",error_type="SomeError",queue_prefix="bull",queue_name="api_v1"} 2627
+job_duration{quantile="0.05",status="failed",job_name="webhook_notification",error_type="SomeError",queue_prefix="bull",queue_name="api_v1"} 2627
+job_duration{quantile="0.5",status="failed",job_name="webhook_notification",error_type="SomeError",queue_prefix="bull",queue_name="api_v1"} 2627
+job_duration{quantile="0.9",status="failed",job_name="webhook_notification",error_type="SomeError",queue_prefix="bull",queue_name="api_v1"} 2627
+job_duration{quantile="0.95",status="failed",job_name="webhook_notification",error_type="SomeError",queue_prefix="bull",queue_name="api_v1"} 2627
+job_duration{quantile="0.99",status="failed",job_name="webhook_notification",error_type="SomeError",queue_prefix="bull",queue_name="api_v1"} 2627
+job_duration{quantile="0.999",status="failed",job_name="webhook_notification",error_type="SomeError",queue_prefix="bull",queue_name="api_v1"} 2627
+job_duration_sum{status="failed",job_name="webhook_notification",error_type="SomeError",queue_prefix="bull",queue_name="api_v1"} 2627
+job_duration_count{status="failed",job_name="webhook_notification",error_type="SomeError",queue_prefix="bull",queue_name="api_v1"} 1
+
+# HELP job_wait_duration Job waiting duration
+# TYPE job_wait_duration summary
+job_wait_duration{quantile="0.01",status="failed",job_name="webhook_notification",error_type="Error",queue_prefix="bull",queue_name="api_v1"} 1888140
+job_wait_duration{quantile="0.05",status="failed",job_name="webhook_notification",error_type="Error",queue_prefix="bull",queue_name="api_v1"} 1888140
+job_wait_duration{quantile="0.5",status="failed",job_name="webhook_notification",error_type="Error",queue_prefix="bull",queue_name="api_v1"} 2010600.5
+job_wait_duration{quantile="0.9",status="failed",job_name="webhook_notification",error_type="Error",queue_prefix="bull",queue_name="api_v1"} 2133061
+job_wait_duration{quantile="0.95",status="failed",job_name="webhook_notification",error_type="Error",queue_prefix="bull",queue_name="api_v1"} 2133061
+job_wait_duration{quantile="0.99",status="failed",job_name="webhook_notification",error_type="Error",queue_prefix="bull",queue_name="api_v1"} 2133061
+job_wait_duration{quantile="0.999",status="failed",job_name="webhook_notification",error_type="Error",queue_prefix="bull",queue_name="api_v1"} 2133061
+job_wait_duration_sum{status="failed",job_name="webhook_notification",error_type="Error",queue_prefix="bull",queue_name="api_v1"} 4021201
+job_wait_duration_count{status="failed",job_name="webhook_notification",error_type="Error",queue_prefix="bull",queue_name="api_v1"} 2
+job_wait_duration{quantile="0.01",status="completed",job_name="webhook_notification",queue_prefix="bull",queue_name="api_v1"} 1962012
+job_wait_duration{quantile="0.05",status="completed",job_name="webhook_notification",queue_prefix="bull",queue_name="api_v1"} 1962012
+job_wait_duration{quantile="0.5",status="completed",job_name="webhook_notification",queue_prefix="bull",queue_name="api_v1"} 2048861
+job_wait_duration{quantile="0.9",status="completed",job_name="webhook_notification",queue_prefix="bull",queue_name="api_v1"} 2079918
+job_wait_duration{quantile="0.95",status="completed",job_name="webhook_notification",queue_prefix="bull",queue_name="api_v1"} 2079918
+job_wait_duration{quantile="0.99",status="completed",job_name="webhook_notification",queue_prefix="bull",queue_name="api_v1"} 2079918
+job_wait_duration{quantile="0.999",status="completed",job_name="webhook_notification",queue_prefix="bull",queue_name="api_v1"} 2079918
+job_wait_duration_sum{status="completed",job_name="webhook_notification",queue_prefix="bull",queue_name="api_v1"} 6090791
+job_wait_duration_count{status="completed",job_name="webhook_notification",queue_prefix="bull",queue_name="api_v1"} 3
+job_wait_duration{quantile="0.01",status="completed",job_name="generate_report",queue_prefix="bull",queue_name="api_v1"} 2046775
+job_wait_duration{quantile="0.05",status="completed",job_name="generate_report",queue_prefix="bull",queue_name="api_v1"} 2046775
+job_wait_duration{quantile="0.5",status="completed",job_name="generate_report",queue_prefix="bull",queue_name="api_v1"} 2125960
+job_wait_duration{quantile="0.9",status="completed",job_name="generate_report",queue_prefix="bull",queue_name="api_v1"} 2158130
+job_wait_duration{quantile="0.95",status="completed",job_name="generate_report",queue_prefix="bull",queue_name="api_v1"} 2158130
+job_wait_duration{quantile="0.99",status="completed",job_name="generate_report",queue_prefix="bull",queue_name="api_v1"} 2158130
+job_wait_duration{quantile="0.999",status="completed",job_name="generate_report",queue_prefix="bull",queue_name="api_v1"} 2158130
+job_wait_duration_sum{status="completed",job_name="generate_report",queue_prefix="bull",queue_name="api_v1"} 8456825
+job_wait_duration_count{status="completed",job_name="generate_report",queue_prefix="bull",queue_name="api_v1"} 4
+job_wait_duration{quantile="0.01",status="completed",job_name="send_email",queue_prefix="bull",queue_name="api_v1"} 2068343
+job_wait_duration{quantile="0.05",status="completed",job_name="send_email",queue_prefix="bull",queue_name="api_v1"} 2068343
+job_wait_duration{quantile="0.5",status="completed",job_name="send_email",queue_prefix="bull",queue_name="api_v1"} 2068343
+job_wait_duration{quantile="0.9",status="completed",job_name="send_email",queue_prefix="bull",queue_name="api_v1"} 2068343
+job_wait_duration{quantile="0.95",status="completed",job_name="send_email",queue_prefix="bull",queue_name="api_v1"} 2068343
+job_wait_duration{quantile="0.99",status="completed",job_name="send_email",queue_prefix="bull",queue_name="api_v1"} 2068343
+job_wait_duration{quantile="0.999",status="completed",job_name="send_email",queue_prefix="bull",queue_name="api_v1"} 2068343
+job_wait_duration_sum{status="completed",job_name="send_email",queue_prefix="bull",queue_name="api_v1"} 2068343
+job_wait_duration_count{status="completed",job_name="send_email",queue_prefix="bull",queue_name="api_v1"} 1
+job_wait_duration{quantile="0.01",status="failed",job_name="webhook_notification",error_type="SomeError",queue_prefix="bull",queue_name="api_v1"} 2155327
+job_wait_duration{quantile="0.05",status="failed",job_name="webhook_notification",error_type="SomeError",queue_prefix="bull",queue_name="api_v1"} 2155327
+job_wait_duration{quantile="0.5",status="failed",job_name="webhook_notification",error_type="SomeError",queue_prefix="bull",queue_name="api_v1"} 2155327
+job_wait_duration{quantile="0.9",status="failed",job_name="webhook_notification",error_type="SomeError",queue_prefix="bull",queue_name="api_v1"} 2155327
+job_wait_duration{quantile="0.95",status="failed",job_name="webhook_notification",error_type="SomeError",queue_prefix="bull",queue_name="api_v1"} 2155327
+job_wait_duration{quantile="0.99",status="failed",job_name="webhook_notification",error_type="SomeError",queue_prefix="bull",queue_name="api_v1"} 2155327
+job_wait_duration{quantile="0.999",status="failed",job_name="webhook_notification",error_type="SomeError",queue_prefix="bull",queue_name="api_v1"} 2155327
+job_wait_duration_sum{status="failed",job_name="webhook_notification",error_type="SomeError",queue_prefix="bull",queue_name="api_v1"} 2155327
+job_wait_duration_count{status="failed",job_name="webhook_notification",error_type="SomeError",queue_prefix="bull",queue_name="api_v1"} 1
+
+# HELP job_attempts Job attempts
+# TYPE job_attempts summary
+job_attempts{quantile="0.01",status="failed",job_name="webhook_notification",error_type="Error",queue_prefix="bull",queue_name="api_v1"} 1
+job_attempts{quantile="0.05",status="failed",job_name="webhook_notification",error_type="Error",queue_prefix="bull",queue_name="api_v1"} 1
+job_attempts{quantile="0.5",status="failed",job_name="webhook_notification",error_type="Error",queue_prefix="bull",queue_name="api_v1"} 1
+job_attempts{quantile="0.9",status="failed",job_name="webhook_notification",error_type="Error",queue_prefix="bull",queue_name="api_v1"} 1
+job_attempts{quantile="0.95",status="failed",job_name="webhook_notification",error_type="Error",queue_prefix="bull",queue_name="api_v1"} 1
+job_attempts{quantile="0.99",status="failed",job_name="webhook_notification",error_type="Error",queue_prefix="bull",queue_name="api_v1"} 1
+job_attempts{quantile="0.999",status="failed",job_name="webhook_notification",error_type="Error",queue_prefix="bull",queue_name="api_v1"} 1
+job_attempts_sum{status="failed",job_name="webhook_notification",error_type="Error",queue_prefix="bull",queue_name="api_v1"} 2
+job_attempts_count{status="failed",job_name="webhook_notification",error_type="Error",queue_prefix="bull",queue_name="api_v1"} 2
+job_attempts{quantile="0.01",status="completed",job_name="webhook_notification",queue_prefix="bull",queue_name="api_v1"} 0
+job_attempts{quantile="0.05",status="completed",job_name="webhook_notification",queue_prefix="bull",queue_name="api_v1"} 0
+job_attempts{quantile="0.5",status="completed",job_name="webhook_notification",queue_prefix="bull",queue_name="api_v1"} 0
+job_attempts{quantile="0.9",status="completed",job_name="webhook_notification",queue_prefix="bull",queue_name="api_v1"} 0
+job_attempts{quantile="0.95",status="completed",job_name="webhook_notification",queue_prefix="bull",queue_name="api_v1"} 0
+job_attempts{quantile="0.99",status="completed",job_name="webhook_notification",queue_prefix="bull",queue_name="api_v1"} 0
+job_attempts{quantile="0.999",status="completed",job_name="webhook_notification",queue_prefix="bull",queue_name="api_v1"} 0
+job_attempts_sum{status="completed",job_name="webhook_notification",queue_prefix="bull",queue_name="api_v1"} 0
+job_attempts_count{status="completed",job_name="webhook_notification",queue_prefix="bull",queue_name="api_v1"} 3
+job_attempts{quantile="0.01",status="completed",job_name="generate_report",queue_prefix="bull",queue_name="api_v1"} 0
+job_attempts{quantile="0.05",status="completed",job_name="generate_report",queue_prefix="bull",queue_name="api_v1"} 0
+job_attempts{quantile="0.5",status="completed",job_name="generate_report",queue_prefix="bull",queue_name="api_v1"} 0
+job_attempts{quantile="0.9",status="completed",job_name="generate_report",queue_prefix="bull",queue_name="api_v1"} 0
+job_attempts{quantile="0.95",status="completed",job_name="generate_report",queue_prefix="bull",queue_name="api_v1"} 0
+job_attempts{quantile="0.99",status="completed",job_name="generate_report",queue_prefix="bull",queue_name="api_v1"} 0
+job_attempts{quantile="0.999",status="completed",job_name="generate_report",queue_prefix="bull",queue_name="api_v1"} 0
+job_attempts_sum{status="completed",job_name="generate_report",queue_prefix="bull",queue_name="api_v1"} 0
+job_attempts_count{status="completed",job_name="generate_report",queue_prefix="bull",queue_name="api_v1"} 4
+job_attempts{quantile="0.01",status="completed",job_name="send_email",queue_prefix="bull",queue_name="api_v1"} 0
+job_attempts{quantile="0.05",status="completed",job_name="send_email",queue_prefix="bull",queue_name="api_v1"} 0
+job_attempts{quantile="0.5",status="completed",job_name="send_email",queue_prefix="bull",queue_name="api_v1"} 0
+job_attempts{quantile="0.9",status="completed",job_name="send_email",queue_prefix="bull",queue_name="api_v1"} 0
+job_attempts{quantile="0.95",status="completed",job_name="send_email",queue_prefix="bull",queue_name="api_v1"} 0
+job_attempts{quantile="0.99",status="completed",job_name="send_email",queue_prefix="bull",queue_name="api_v1"} 0
+job_attempts{quantile="0.999",status="completed",job_name="send_email",queue_prefix="bull",queue_name="api_v1"} 0
+job_attempts_sum{status="completed",job_name="send_email",queue_prefix="bull",queue_name="api_v1"} 0
+job_attempts_count{status="completed",job_name="send_email",queue_prefix="bull",queue_name="api_v1"} 1
+job_attempts{quantile="0.01",status="failed",job_name="webhook_notification",error_type="SomeError",queue_prefix="bull",queue_name="api_v1"} 1
+job_attempts{quantile="0.05",status="failed",job_name="webhook_notification",error_type="SomeError",queue_prefix="bull",queue_name="api_v1"} 1
+job_attempts{quantile="0.5",status="failed",job_name="webhook_notification",error_type="SomeError",queue_prefix="bull",queue_name="api_v1"} 1
+job_attempts{quantile="0.9",status="failed",job_name="webhook_notification",error_type="SomeError",queue_prefix="bull",queue_name="api_v1"} 1
+job_attempts{quantile="0.95",status="failed",job_name="webhook_notification",error_type="SomeError",queue_prefix="bull",queue_name="api_v1"} 1
+job_attempts{quantile="0.99",status="failed",job_name="webhook_notification",error_type="SomeError",queue_prefix="bull",queue_name="api_v1"} 1
+job_attempts{quantile="0.999",status="failed",job_name="webhook_notification",error_type="SomeError",queue_prefix="bull",queue_name="api_v1"} 1
+job_attempts_sum{status="failed",job_name="webhook_notification",error_type="SomeError",queue_prefix="bull",queue_name="api_v1"} 1
+job_attempts_count{status="failed",job_name="webhook_notification",error_type="SomeError",queue_prefix="bull",queue_name="api_v1"} 1
 ```
 
-Note that you can integrate this with Grafana to set up things like alerts for queues. 
+Note that you can integrate this with Grafana to set up things like alerts for queues:
 
-![](screenshots/grafana-ui.png)
+Queue Overview: https://grafana.com/grafana/dashboards/14538 (import into grafana using id: `14538`)
+![](screenshots/grafana-all-queues.png)
+
+Queue Specific: https://grafana.com/grafana/dashboards/14537 (import into grafana using id: `14537`)
+![](screenshots/grafana-queue-specific.png)
 
 Want to play around with all this stuff locally? You can spin everything needed by running:
 
