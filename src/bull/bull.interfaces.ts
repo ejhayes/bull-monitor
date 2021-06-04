@@ -1,5 +1,5 @@
 import { RequestHandler } from '@nestjs/common/interfaces';
-import { Queue } from 'bull';
+import { Queue } from 'bullmq';
 
 export interface IBullUi {
   addQueue(queuePrefix: string, queueName: string, queue: Queue): void;

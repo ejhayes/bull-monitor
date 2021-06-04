@@ -2,7 +2,7 @@ import { ConfigService } from '@app/config/config.service';
 import { InjectLogger, LoggerService } from '@app/logger';
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { Mutex } from 'async-mutex';
-import Bull from 'bull';
+import { Queue, QueueScheduler } from 'bullmq';
 import { EventEmitter2 } from 'eventemitter2';
 import { RedisService } from 'nestjs-redis';
 import {
@@ -14,12 +14,9 @@ import {
 import { QueueCreatedEvent, QueueRemovedEvent } from './bull.interfaces';
 
 const BULL_QUEUE_REGEX = /(?<queuePrefix>^[^:]+):(?<queueName>[^:]+):/;
-const BULL_KEYSPACE_REGEX =
-  /(?<queuePrefix>[^:]+):(?<queueName>[^:]+):stalled-check$/;
+const BULL_KEYSPACE_REGEX = /(?<queuePrefix>[^:]+):(?<queueName>[^:]+):meta$/;
 const parseBullQueue = (key: string) => {
-  const MATCHER = key.match(/:stalled-check$/)
-    ? BULL_KEYSPACE_REGEX
-    : BULL_QUEUE_REGEX;
+  const MATCHER = key.match(/:meta$/) ? BULL_KEYSPACE_REGEX : BULL_QUEUE_REGEX;
   const match = key.match(MATCHER);
   return {
     queuePrefix: match.groups?.queuePrefix
@@ -33,9 +30,11 @@ const REDIS_CONFIG_NOTIFY_KEYSPACE_EVENTS = 'notify-keyspace-events';
 
 // Expected configuration flags
 const REDIS_CONFIG_NOTIFY_KEYSPACE_EVENTS_FLAGS = 'A$K';
+
 @Injectable()
 export class BullQueuesService implements OnModuleInit {
-  private readonly _queues: { [queueName: string]: Bull.Queue } = {};
+  private readonly _queues: { [queueName: string]: Queue } = {};
+  private readonly _schedulers: { [queueName: string]: QueueScheduler } = {};
 
   constructor(
     private readonly eventEmitter: EventEmitter2,
@@ -53,7 +52,7 @@ export class BullQueuesService implements OnModuleInit {
     const mutex = new Mutex();
     return await mutex.runExclusive(async () => {
       switch (eventType) {
-        case REDIS_KEYSPACE_EVENT_TYPES.SET:
+        case REDIS_KEYSPACE_EVENT_TYPES.HSET:
           await this.addQueue(queuePrefix, queueName);
           break;
         case REDIS_KEYSPACE_EVENT_TYPES.DELETE:
@@ -88,9 +87,16 @@ export class BullQueuesService implements OnModuleInit {
     this.logger.debug(`Attempting to add queue: ${queueKey}`);
     if (!(queueKey in this._queues)) {
       this.logger.log(`Adding queue: ${queueKey}`);
-      this._queues[queueKey] = new Bull(queueName, {
+      this._queues[queueKey] = new Queue(queueName, {
         prefix: queuePrefix,
-        redis: {
+        connection: {
+          host: this.configService.config.REDIS_HOST,
+          port: this.configService.config.REDIS_PORT,
+        },
+      });
+      this._schedulers[queueKey] = new QueueScheduler(queueName, {
+        prefix: queuePrefix,
+        connection: {
           host: this.configService.config.REDIS_HOST,
           port: this.configService.config.REDIS_PORT,
         },
@@ -102,7 +108,7 @@ export class BullQueuesService implements OnModuleInit {
     }
   }
 
-  private removeQueue(queuePrefix: string, queueName: string) {
+  private async removeQueue(queuePrefix: string, queueName: string) {
     const queueKey = this.generateQueueKey(queuePrefix, queueName);
     this.logger.debug(`Attempting to remove queue: ${queueKey}`);
     if (queueKey in this._queues) {
@@ -111,7 +117,10 @@ export class BullQueuesService implements OnModuleInit {
         EVENT_TYPES.QUEUE_REMOVED,
         new QueueRemovedEvent(queuePrefix, queueName),
       );
+      await this._queues[queueKey].close();
+      await this._schedulers[queueKey].close();
       delete this._queues[queueKey];
+      delete this._schedulers[queueKey];
     }
   }
 
@@ -120,7 +129,7 @@ export class BullQueuesService implements OnModuleInit {
     const loadedQueues = new Set([]);
     return new Promise((resolve, reject) => {
       client
-        .scanStream({ type: 'string', match, count: 100 })
+        .scanStream({ type: 'hash', match, count: 100 })
         .on('data', (keys: string[]) => {
           for (const key of keys) {
             const queueMatch = parseBullQueue(key);
@@ -238,14 +247,15 @@ export class BullQueuesService implements OnModuleInit {
 
         newlyLoadedQueues = (
           await Promise.all([
-            this.findAndPopulateQueues(`${queuePrefix}:*:stalled-check`),
-            this.findAndPopulateQueues(`${queuePrefix}:*:id`),
+            // this.findAndPopulateQueues(`${queuePrefix}:*:stalled-check`),
+            //this.findAndPopulateQueues(`${queuePrefix}:*:id`),
+            this.findAndPopulateQueues(`${queuePrefix}:*:meta`),
           ])
         ).flat();
 
         // subscribe to keyspace events
         client.psubscribe(
-          `__keyspace@0__:${queuePrefix}:*:stalled-check`,
+          `__keyspace@0__:${queuePrefix}:*:meta`,
           (err, count) => {
             this.logger.log(`Subscribed to keyspace events for ${queuePrefix}`);
           },
@@ -280,7 +290,10 @@ export class BullQueuesService implements OnModuleInit {
       );
       for (const queueToPrune of queuesToPrune) {
         const queueDetails = this.splitQueueKey(queueToPrune);
-        this.removeQueue(queueDetails.queuePrefix, queueDetails.queueName);
+        await this.removeQueue(
+          queueDetails.queuePrefix,
+          queueDetails.queueName,
+        );
       }
     });
     client.on(REDIS_EVENT_TYPES.RECONNECTING, () => {
