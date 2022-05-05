@@ -18,7 +18,7 @@ export class ConfigService {
      * Automatically update redis configuration (false requires you
      * to manually set keyspace notifications)
      */
-    REDIS_CONFIGURE_KEYSPACE_NOTIFICATIONS: bool({ default: true }),
+    REDIS_CONFIGURE_KEYSPACE_NOTIFICATIONS: bool({ default: false }),
     /**
      * Redis host to fetch queues from
      */
@@ -27,6 +27,10 @@ export class ConfigService {
      * Redis port to fetch queues from
      */
     REDIS_PORT: port(),
+    /**
+     * Redis port to fetch queues from
+     */
+    REDIS_DB: num({ default: 0 }),
     /**
      * Comma separate list of bull queue prefixes to
      * monitor (default: bull)
