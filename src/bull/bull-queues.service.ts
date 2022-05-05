@@ -131,7 +131,7 @@ export class BullQueuesService implements OnModuleInit {
     const loadedQueues = new Set([]);
     return new Promise((resolve, reject) => {
       client
-        .scanStream({ type: 'hash', match, count: 100 })
+        .scanStream({ match, count: 100 })
         .on('data', (keys: string[]) => {
           for (const key of keys) {
             const queueMatch = parseBullQueue(key);
