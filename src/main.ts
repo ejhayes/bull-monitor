@@ -15,6 +15,9 @@ async function bootstrap() {
   OpenAPIModule.setup('docs', app);
 
   loggerService.log(`Listening on HTTP port ${configService.config.PORT}`);
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  });
   await app.listen(configService.config.PORT);
 }
 bootstrap();
