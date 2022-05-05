@@ -1723,20 +1723,19 @@ bull-prom@ejhayes/bull-prom#master:
   version "3.2.1"
   resolved "https://codeload.github.com/ejhayes/bull-prom/tar.gz/fe8dc8b41e02ec2d2190f538b31313fd28a62fa6"
 
-bull@^3.22.5:
-  version "3.29.3"
-  resolved "https://registry.yarnpkg.com/bull/-/bull-3.29.3.tgz#5b0059b172685b0d6f011d56214e1898ff3a7a0b"
-  integrity sha512-MOqV1dKLy1YQgP9m3lFolyMxaU+1+o4afzYYf0H4wNM+x/S0I1QPQfkgGlLiH00EyFrvSmeubeCYFP47rTfpjg==
+bull@^4.2.0:
+  version "4.8.2"
+  resolved "https://registry.yarnpkg.com/bull/-/bull-4.8.2.tgz#0d02fe389777abe29d50fd46d123bc62e074cfcd"
+  integrity sha512-S7CNIL9+vsbLKwOGkUI6mawY5iABKQJLZn5a7KPnxAZrDhFXkrxsHHXLCKUR/+Oqys3Vk5ElWdj0SLtK84b1Nw==
   dependencies:
-    cron-parser "^2.13.0"
+    cron-parser "^4.2.1"
     debuglog "^1.0.0"
     get-port "^5.1.1"
-    ioredis "^4.27.0"
+    ioredis "^4.28.5"
     lodash "^4.17.21"
+    msgpackr "^1.5.2"
     p-timeout "^3.2.0"
-    promise.prototype.finally "^3.1.2"
     semver "^7.3.2"
-    util.promisify "^1.0.1"
     uuid "^8.3.0"
 
 bullmq@^1.28.0:
@@ -2150,14 +2149,6 @@ create-require@^1.1.0:
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/create-require/-/create-require-1.1.1.tgz#c1d7e8f1e5f6cfc9ff65f9cd352d37348756c333"
   integrity sha512-dcKFX3jn0MpIaXjisoRvexIJVEKzaq7z2rZKxf+MSr9TkdmHmsU4m2lcLojrj/FHl8mk5VxMmYA+ftRkP/3oKQ==
-
-cron-parser@^2.13.0:
-  version "2.18.0"
-  resolved "https://registry.yarnpkg.com/cron-parser/-/cron-parser-2.18.0.tgz#de1bb0ad528c815548371993f81a54e5a089edcf"
-  integrity sha512-s4odpheTyydAbTBQepsqd2rNWGa2iV3cyo8g7zbI2QQYGLVsfbhmwukayS1XHppe02Oy1fg7mg6xoaraVJeEcg==
-  dependencies:
-    is-nan "^1.3.0"
-    moment-timezone "^0.5.31"
 
 cron-parser@^4.2.1:
   version "4.4.0"
@@ -3143,13 +3134,6 @@ follow-redirects@^1.10.0:
   resolved "https://registry.yarnpkg.com/follow-redirects/-/follow-redirects-1.14.9.tgz#dd4ea157de7bfaf9ea9b3fbd85aa16951f78d8d7"
   integrity sha512-MQDfihBQYMcyy5dhRDJUHcw7lb2Pv/TuE6xP1vyraLukNDHKbDxDNaOE3NbCAdKQApno+GPRyo1YAp89yCjK4w==
 
-for-each@^0.3.3:
-  version "0.3.3"
-  resolved "https://registry.yarnpkg.com/for-each/-/for-each-0.3.3.tgz#69b447e88a0a5d32c3e7084f3f1710034b21376e"
-  integrity sha512-jqYfLp7mo9vIyQf8ykW2v7A+2N4QjeCeI5+Dz9XraiO1ign81wjiH7Fb9vSOWvQfNtmSa4H2RoQTrrXivdUZmw==
-  dependencies:
-    is-callable "^1.1.3"
-
 for-in@^1.0.2:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/for-in/-/for-in-1.0.2.tgz#81068d295a8142ec0ac726c6e2200c30fb6d5e80"
@@ -3637,7 +3621,7 @@ ioredis-mock@^5.5.6:
     lodash "^4.17.21"
     standard-as-callback "^2.1.0"
 
-ioredis@^4, ioredis@^4.27.0, ioredis@^4.28.5:
+ioredis@^4, ioredis@^4.28.5:
   version "4.28.5"
   resolved "https://registry.yarnpkg.com/ioredis/-/ioredis-4.28.5.tgz#5c149e6a8d76a7f8fa8a504ffc85b7d5b6797f9f"
   integrity sha512-3GYo0GJtLqgNXj4YhrisLaNNvWSNwSS2wS4OELGfGxH8I69+XfNdnmV1AyN+ZqMh0i7eX+SWjrwFKDBDgfBC1A==
@@ -3710,7 +3694,7 @@ is-buffer@^1.1.5:
   resolved "https://registry.yarnpkg.com/is-buffer/-/is-buffer-1.1.6.tgz#efaa2ea9daa0d7ab2ea13a97b2b8ad51fefbe8be"
   integrity sha512-NcdALwpXkTm5Zvvbk7owOUSvVvBKDgKP5/ewfXEznmQFfs4ZRmanOeKBTjRVjka3QFoN6XJ+9F3USqfHqTaU5w==
 
-is-callable@^1.1.3, is-callable@^1.1.4, is-callable@^1.2.4:
+is-callable@^1.1.4, is-callable@^1.2.4:
   version "1.2.4"
   resolved "https://registry.yarnpkg.com/is-callable/-/is-callable-1.2.4.tgz#47301d58dd0259407865547853df6d61fe471945"
   integrity sha512-nsuwtxZfMX67Oryl9LCQ+upnC0Z0BgpwntpS89m1H/TLF0zNfzfLMV/9Wa/6MZsj0acpEjAO0KF1xT6ZdLl95w==
@@ -3816,14 +3800,6 @@ is-interactive@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/is-interactive/-/is-interactive-1.0.0.tgz#cea6e6ae5c870a7b0a0004070b7b587e0252912e"
   integrity sha512-2HvIEKRoqS62guEC+qBjpvRubdX910WCMuJTZ+I9yvqKU2/12eSL549HMwtabb4oupdj2sMP50k+XJfB/8JE6w==
-
-is-nan@^1.3.0:
-  version "1.3.2"
-  resolved "https://registry.yarnpkg.com/is-nan/-/is-nan-1.3.2.tgz#043a54adea31748b55b6cd4e09aadafa69bd9e1d"
-  integrity sha512-E+zBKpQ2t6MEo1VsonYmluk9NxGrbzpeeLC2xIViuO2EjU2xsXsBPwTr3Ykv9l08UYEVEdWeRZNouaZqF6RN0w==
-  dependencies:
-    call-bind "^1.0.0"
-    define-properties "^1.1.3"
 
 is-negative-zero@^2.0.2:
   version "2.0.2"
@@ -4853,14 +4829,7 @@ mkdirp@^0.5.1:
   dependencies:
     minimist "^1.2.6"
 
-moment-timezone@^0.5.31:
-  version "0.5.34"
-  resolved "https://registry.yarnpkg.com/moment-timezone/-/moment-timezone-0.5.34.tgz#a75938f7476b88f155d3504a9343f7519d9a405c"
-  integrity sha512-3zAEHh2hKUs3EXLESx/wsgw6IQdusOT8Bxm3D9UrHPQR7zlMmzwybC8zHEM1tQ4LJwP7fcxrWr8tuBg05fFCbg==
-  dependencies:
-    moment ">= 2.9.0"
-
-"moment@>= 2.9.0", moment@^2.29.1:
+moment@^2.29.1:
   version "2.29.3"
   resolved "https://registry.yarnpkg.com/moment/-/moment-2.29.3.tgz#edd47411c322413999f7a5940d526de183c031f3"
   integrity sha512-c6YRvhEo//6T2Jz/vVtYzqBzwvPT95JBQ+smCytzf7c50oMZRsR/a4w88aD34I+/QVSfnoAnSBFPJHItlOMJVw==
@@ -4929,7 +4898,7 @@ msgpackr-extract@^1.1.4:
     msgpackr-extract-linux-x64 "1.1.0"
     msgpackr-extract-win32-x64 "1.1.0"
 
-msgpackr@^1.4.6:
+msgpackr@^1.4.6, msgpackr@^1.5.2:
   version "1.5.7"
   resolved "https://registry.yarnpkg.com/msgpackr/-/msgpackr-1.5.7.tgz#53b3fd0e7afdf4184a594881a18832df9422b660"
   integrity sha512-Hsa80i8W4BiObSMHslfnwC+CC1CYHZzoXJZn0+3EvoCEOgt3c5QlXhdcjgFk2aZxMgpV8aUFZqJyQUCIp4UrzA==
@@ -5138,15 +5107,6 @@ object.assign@^4.1.2:
     define-properties "^1.1.3"
     has-symbols "^1.0.1"
     object-keys "^1.1.1"
-
-object.getownpropertydescriptors@^2.1.1:
-  version "2.1.3"
-  resolved "https://registry.yarnpkg.com/object.getownpropertydescriptors/-/object.getownpropertydescriptors-2.1.3.tgz#b223cf38e17fefb97a63c10c91df72ccb386df9e"
-  integrity sha512-VdDoCwvJI4QdC6ndjpqFmoL3/+HxffFBbcJzKi5hwLLqqx3mdbedRpfZDdK0SrOSauj8X4GzBvnDZl4vTN7dOw==
-  dependencies:
-    call-bind "^1.0.2"
-    define-properties "^1.1.3"
-    es-abstract "^1.19.1"
 
 object.pick@^1.3.0:
   version "1.3.0"
@@ -5487,15 +5447,6 @@ prom-client@^13.1.0:
   integrity sha512-wGr5mlNNdRNzEhRYXgboUU2LxHWIojxscJKmtG3R8f4/KiWqyYgXTLHs0+Ted7tG3zFT7pgHJbtomzZ1L0ARaQ==
   dependencies:
     tdigest "^0.1.1"
-
-promise.prototype.finally@^3.1.2:
-  version "3.1.3"
-  resolved "https://registry.yarnpkg.com/promise.prototype.finally/-/promise.prototype.finally-3.1.3.tgz#d3186e58fcf4df1682a150f934ccc27b7893389c"
-  integrity sha512-EXRF3fC9/0gz4qkt/f5EP5iW4kj9oFpBICNpCNOb/52+8nlHIX07FPLbi/q4qYBQ1xZqivMzTpNQSnArVASolQ==
-  dependencies:
-    call-bind "^1.0.2"
-    define-properties "^1.1.3"
-    es-abstract "^1.19.1"
 
 prompts@^2.0.1:
   version "2.4.2"
@@ -6855,17 +6806,6 @@ util-deprecate@^1.0.1, util-deprecate@~1.0.1:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/util-deprecate/-/util-deprecate-1.0.2.tgz#450d4dc9fa70de732762fbd2d4a28981419a0ccf"
   integrity sha1-RQ1Nyfpw3nMnYvvS1KKJgUGaDM8=
-
-util.promisify@^1.0.1:
-  version "1.1.1"
-  resolved "https://registry.yarnpkg.com/util.promisify/-/util.promisify-1.1.1.tgz#77832f57ced2c9478174149cae9b96e9918cd54b"
-  integrity sha512-/s3UsZUrIfa6xDhr7zZhnE9SLQ5RIXyYfiVnMMyMDzOc8WhWN4Nbh36H842OyurKbCDAesZOJaVyvmSl6fhGQw==
-  dependencies:
-    call-bind "^1.0.0"
-    define-properties "^1.1.3"
-    for-each "^0.3.3"
-    has-symbols "^1.0.1"
-    object.getownpropertydescriptors "^2.1.1"
 
 utils-merge@1.0.1:
   version "1.0.1"
