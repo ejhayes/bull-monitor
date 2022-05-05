@@ -1,8 +1,8 @@
 FROM node:16-alpine as build
 WORKDIR /app
 RUN apk add --no-cache openssh git
-COPY package* ./
-RUN npm install --production
+COPY package.json yarn.lock ./
+RUN yarn install --production
 COPY dist ./
 
 FROM node:16-alpine
