@@ -19,10 +19,10 @@ const parseBullQueue = (key: string) => {
   const MATCHER = key.match(/:meta$/) ? BULL_KEYSPACE_REGEX : BULL_QUEUE_REGEX;
   const match = key.match(MATCHER);
   return {
-    queuePrefix: match.groups?.queuePrefix
+    queuePrefix: match?.groups?.queuePrefix
       ? match.groups.queuePrefix
       : 'unknown',
-    queueName: match.groups?.queueName ? match.groups.queueName : 'unknown',
+    queueName: match?.groups?.queueName ? match.groups.queueName : 'unknown',
   };
 };
 
@@ -92,6 +92,7 @@ export class BullQueuesService implements OnModuleInit {
         connection: {
           host: this.configService.config.REDIS_HOST,
           port: this.configService.config.REDIS_PORT,
+          db: this.configService.config.REDIS_DB,
         },
       });
       this._schedulers[queueKey] = new QueueScheduler(queueName, {
@@ -99,6 +100,7 @@ export class BullQueuesService implements OnModuleInit {
         connection: {
           host: this.configService.config.REDIS_HOST,
           port: this.configService.config.REDIS_PORT,
+          db: this.configService.config.REDIS_DB,
         },
       });
       this.eventEmitter.emit(

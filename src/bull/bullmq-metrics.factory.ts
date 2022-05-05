@@ -190,6 +190,7 @@ export class BullMQMetricsFactory {
       connection: {
         host: this.configService.config.REDIS_HOST,
         port: this.configService.config.REDIS_PORT,
+        db: this.configService.config.REDIS_DB,
       },
     });
 

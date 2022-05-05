@@ -22,6 +22,7 @@ import { BullMQMetricsFactory } from './bullmq-metrics.factory';
               name: client,
               host: configService.config.REDIS_HOST,
               port: configService.config.REDIS_PORT,
+              db: configService.config.REDIS_DB,
               enableReadyCheck: true,
             };
           },
