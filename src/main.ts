@@ -9,7 +9,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService: ConfigService = app.get(ConfigService);
   const loggerService: LoggerService = await app.resolve(LoggerService);
-  //loggerService.setContext(bootstrap.name);
+  loggerService.setContext(bootstrap.name);
   app.useLogger(loggerService);
 
   OpenAPIModule.setup('docs', app);

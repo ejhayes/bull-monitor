@@ -28,6 +28,10 @@ export class ConfigService {
      */
     REDIS_PORT: port(),
     /**
+     * Redis password (if needed)
+     */
+    REDIS_PASSWORD: str({ default: '' }),
+    /**
      * Comma separate list of bull queue prefixes to
      * monitor (default: bull)
      */

@@ -11,7 +11,7 @@
     "ci:build": "npm run build && docker-compose build bull-monitor",
     "ci:publish": "npm run ci:build && docker-compose push bull-monitor",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "services:start": "docker-compose up -d grafana",
+    "services:start": "docker-compose up -d grafana redis",
     "services:start:all": "docker-compose up -d grafana bull-monitor",
     "services:stop": "docker-compose stop",
     "services:remove": "docker-compose rm --stop -f",

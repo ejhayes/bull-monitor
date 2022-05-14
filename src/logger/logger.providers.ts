@@ -8,7 +8,7 @@ function createLoggerProvider(prefix: string): Provider<LoggerService> {
     provide: getLoggerToken(prefix),
     useFactory: (logger) => {
       if (prefix) {
-        //logger.setContext(prefix);
+        logger.setContext(prefix);
       }
       return logger;
     },
