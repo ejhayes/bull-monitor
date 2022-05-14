@@ -1,6 +1,6 @@
-import Bull from 'bull'
-import {bool, cleanEnv, num, port, str} from 'envalid'
-import Faker from 'faker'
+import * as Bull from 'bullmq'
+import { bool, cleanEnv, num, port, str } from 'envalid';
+import {faker} from '@faker-js/faker';
 
 function sleep(ms) {
     return new Promise((resolve) => {
@@ -27,22 +27,36 @@ const config = cleanEnv(process.env, {
 
 const main = async () => {
     console.log(`Using queue: ${config.PREFIX}:${config.QUEUE} (max jobs=${config.MAX_JOBS})`);
-    const queue = new Bull(config.QUEUE, {
+    const queue = new Bull.Queue(config.QUEUE, {
         prefix: config.PREFIX,
         //limiter: {
         //    duration: 10000,
         //    max: config.MAX_JOBS
         //},
-        redis: {
+        connection: {
             host: config.REDIS_HOST,
             port: config.REDIS_PORT
         }
     });
 
-    await queue.isReady()
+    //await queue.isReady()
 
     if (config.ACTION === ACTIONS.PROCESS) {
         console.log('Enabling processing');
+        const myWorker = new Bull.Worker(
+            config.QUEUE,
+            async (job)=> {
+                job.log('Starting job....')
+            },
+            {
+                connection: {
+                    host: config.REDIS_HOST,
+                    port: config.REDIS_PORT
+                }
+            }
+        )
+        
+        /*
         queue.process(30, async (job) => {
             const delay = Math.floor(Math.random() * config.DELAY_MS)
             console.log(`Starting job: ${job.id} with delay ${delay}`);
@@ -59,16 +73,17 @@ const main = async () => {
             console.log(`Job ${job.id} is now complete after the delay`);
             job.log(`Job ${job.id} is now complete after the delay`);
         })
+        */
     }
 
     if (config.ACTION === ACTIONS.CREATE && config.CREATE_DELAY_MS > 0) {
         console.log(`Creating jobs every ${config.CREATE_DELAY_MS}ms...`)
         setInterval(() => {
             console.log('Adding dummy job')
-            queue.add({
-                buzzword: Faker.company.bsBuzz(),
-                job: Faker.name.jobTitle(),
-                name: Faker.name.firstName
+            queue.add('asdasd',{
+                buzzword: faker.company.bsBuzz(),
+                job: faker.name.jobTitle(),
+                name: faker.name.firstName
             }, {attempts: 4})
         }, config.CREATE_DELAY_MS);   
     }

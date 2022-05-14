@@ -1,5 +1,6 @@
-import { createBullBoard } from 'bull-board';
-import { BullMQAdapter } from 'bull-board/bullMQAdapter';
+import { createBullBoard } from '@bull-board/api';
+import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
+import { ExpressAdapter } from '@bull-board/express'
 import { Queue } from 'bullmq';
 import { ConfigService } from '../../config/config.service';
 import { LoggerService } from '../../logger';
@@ -17,18 +18,21 @@ interface BullBoardLocals {
 }
 
 export class BullBoardUi implements IBullUi {
-  private readonly _ui: ReturnType<typeof createBullBoard>;
+  private readonly _ui: ExpressAdapter; //ReturnType<typeof createBullBoard>;
 
   constructor(
     private readonly logger: LoggerService,
     private readonly configService: ConfigService,
   ) {
-    this._ui = createBullBoard([]);
+    this._ui = new ExpressAdapter();
+    this._ui.setBasePath('/queues');
+
+    createBullBoard({ queues: [], serverAdapter: this._ui });
   }
 
   addQueue(queuePrefix: string, queueName: string, queue: Queue) {
     const queueKey = `${queuePrefix}:${queueName}`;
-    (this._ui.router.locals as BullBoardLocals).bullBoardQueues.set(
+    (this._ui as unknown as BullBoardLocals).bullBoardQueues.set(
       queueKey,
       new BullMQAdapter(queue),
     );
@@ -36,12 +40,12 @@ export class BullBoardUi implements IBullUi {
 
   removeQueue(queuePrefix: string, queueName: string) {
     const queueKey = `${queuePrefix}:${queueName}`;
-    (this._ui.router.locals as BullBoardLocals).bullBoardQueues.delete(
+    (this._ui.getRouter().locals as BullBoardLocals).bullBoardQueues.delete(
       queueKey,
     );
   }
 
   get middleware() {
-    return this._ui.router;
+    return this._ui.getRouter();
   }
 }

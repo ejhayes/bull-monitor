@@ -1,7 +1,7 @@
 import {
   Inject,
   Injectable,
-  Logger as NestLogger,
+  ConsoleLogger as NestLogger,
   Scope,
 } from '@nestjs/common';
 import { yellow } from 'chalk';
@@ -25,12 +25,12 @@ export class LoggerService extends NestLogger {
 
   constructor(
     @Inject(LOGGER_MODULE_OPTIONS)
-    private readonly options: LoggerModuleOptions = {},
+    private readonly opts: LoggerModuleOptions = {},
   ) {
     super();
-    this.env = this.options.env || process.env.NODE_ENV;
-    this.logLabel = this.options.label || process.env.LOG_LABEL;
-    this.logLevel = this.options.level || process.env.LOG_LEVEL;
+    this.env = this.opts.env || process.env.NODE_ENV;
+    this.logLabel = this.opts.label || process.env.LOG_LABEL;
+    this.logLevel = this.opts.level || process.env.LOG_LEVEL;
     this.pid = process.pid;
 
     this.logger = this.createLogger();
