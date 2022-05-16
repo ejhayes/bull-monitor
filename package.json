@@ -22,11 +22,11 @@
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\"",
     "lint:fix": "npm run lint --fix",
     "precommit": "npm run lint && npm run build && npm run test && npm run test:e2e",
-    "test": "dotenv -e environments/local.env -e environments/test.env -- jest --detectOpenHandles --forceExit",
+    "test": "dotenv -e environments/local.env -e environments/test.env -- jest",
     "test:watch": "dotenv -e environments/local.env -e environments/test.env -- jest --watch",
     "test:cov": "dotenv -e environments/local.env -e environments/test.env -- jest --coverage",
     "test:debug": "dotenv -e environments/local.env -e environments/test.env -- node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "dotenv -e environments/local.env -e environments/test.env -- jest --rootDir . --testRegex '.e2e-spec.ts$'"
+    "test:e2e": "dotenv -e environments/local.env -e environments/test.env -- jest --rootDir . --testRegex '.e2e-spec.ts$' --detectOpenHandles --forceExit"
   },
   "dependencies": {
     "@bull-board/api": "^3.11.0",
@@ -72,7 +72,6 @@
     "eslint-plugin-prettier": "^4.0.0",
     "eslint-plugin-typescript-sort-keys": "^2.1.0",
     "husky": "^8.0.1",
-    "ioredis-mock": "^8.2.0",
     "jest": "^28.1.0",
     "prettier": "^2.6.2",
     "supertest": "^6.2.3",
