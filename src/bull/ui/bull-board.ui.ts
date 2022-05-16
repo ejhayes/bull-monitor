@@ -1,6 +1,6 @@
 import { createBullBoard } from '@bull-board/api';
 import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
-import { ExpressAdapter } from '@bull-board/express'
+import { ExpressAdapter } from '@bull-board/express';
 import { Queue } from 'bullmq';
 import { ConfigService } from '../../config/config.service';
 import { LoggerService } from '../../logger';
