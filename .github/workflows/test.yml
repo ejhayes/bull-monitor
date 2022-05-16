@@ -16,8 +16,6 @@ jobs:
           --health-retries 5
         ports:
           - 6001:6379
-    env:
-      REDIS_HOST: redis
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
