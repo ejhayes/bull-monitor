@@ -10,7 +10,6 @@ import { ConfigService } from '@app/config/config.service';
 import { LoggerModule, LoggerService } from '@app/logger';
 import { Test } from '@nestjs/testing';
 import Arena from 'bull-arena';
-import ArenaQueue from 'bull-arena/src/server/queue';
 import { Queue } from 'bullmq';
 import { BullArenaUi } from './arena.ui';
 
@@ -59,10 +58,6 @@ describe(BullArenaUi, () => {
       },
       { disableListen: true },
     );
-    // TODO: expect queues to be empty
-    //expect(ArenaQueue).toBeCalledTimes(1)
-
-    //arenaUi.addQueue('blah-prefix','blah-name', queue)
   });
 
   it('adds a queue', async () => {

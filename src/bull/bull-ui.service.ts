@@ -1,13 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { OnEvent } from '@nestjs/event-emitter';
+import { TypedEmitter } from 'tiny-typed-emitter2';
 import { ConfigService } from '../config/config.service';
 import { InjectLogger, LoggerService } from '../logger';
 import { EVENT_TYPES, UI_TYPES } from './bull.enums';
-import {
-  IBullUi,
-  QueueCreatedEvent,
-  QueueRemovedEvent,
-} from './bull.interfaces';
+import { BullQueuesServiceEvents, IBullUi } from './bull.interfaces';
 import { BullArenaUi } from './ui/arena.ui';
 import { BullBoardUi } from './ui/bull-board.ui';
 
@@ -19,6 +15,7 @@ export class BullUiService {
     @InjectLogger(BullUiService)
     private readonly logger: LoggerService,
     private readonly configService: ConfigService,
+    events: TypedEmitter<BullQueuesServiceEvents>,
   ) {
     switch (configService.config.UI) {
       case UI_TYPES.BULL_BOARD:
@@ -30,18 +27,16 @@ export class BullUiService {
       default:
         throw new Error(`Unknown UI type: ${configService.config.UI}`);
     }
-  }
 
-  @OnEvent(EVENT_TYPES.QUEUE_CREATED)
-  private addQueueToDashboard(event: QueueCreatedEvent) {
-    this.logger.log(`Adding queue to dashboard: ${event.queueName}`);
-    this._ui.addQueue(event.queuePrefix, event.queueName, event.queue);
-  }
+    events.on(EVENT_TYPES.QUEUE_CREATED, (event) => {
+      this.logger.log(`Adding queue to dashboard: ${event.queueName}`);
+      this._ui.addQueue(event.queuePrefix, event.queueName, event.queue);
+    });
 
-  @OnEvent(EVENT_TYPES.QUEUE_REMOVED)
-  private removeQueueFromDashboard(event: QueueRemovedEvent) {
-    this.logger.log(`Removing queue from dashboard: ${event.queueName}`);
-    this._ui.removeQueue(event.queuePrefix, event.queueName);
+    events.on(EVENT_TYPES.QUEUE_REMOVED, (event) => {
+      this.logger.log(`Removing queue from dashboard: ${event.queueName}`);
+      this._ui.removeQueue(event.queuePrefix, event.queueName);
+    });
   }
 
   get middleware() {

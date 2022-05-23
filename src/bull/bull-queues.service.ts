@@ -1,17 +1,21 @@
 import { ConfigService } from '@app/config/config.service';
 import { InjectLogger, LoggerService } from '@app/logger';
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { Mutex } from 'async-mutex';
 import { Queue, QueueScheduler } from 'bullmq';
-import { EventEmitter2 } from 'eventemitter2';
 import { RedisService } from 'nestjs-redis';
+import { TypedEmitter } from 'tiny-typed-emitter2';
 import {
   EVENT_TYPES,
   REDIS_CLIENTS,
   REDIS_EVENT_TYPES,
   REDIS_KEYSPACE_EVENT_TYPES,
 } from './bull.enums';
-import { QueueCreatedEvent, QueueRemovedEvent } from './bull.interfaces';
+import {
+  BullQueuesServiceEvents,
+  QueueCreatedEvent,
+  QueueRemovedEvent,
+} from './bull.interfaces';
 
 const BULL_QUEUE_REGEX = /(?<queuePrefix>^[^:]+):(?<queueName>[^:]+):/;
 const BULL_KEYSPACE_REGEX = /(?<queuePrefix>[^:]+):(?<queueName>[^:]+):meta$/;
@@ -32,12 +36,12 @@ const REDIS_CONFIG_NOTIFY_KEYSPACE_EVENTS = 'notify-keyspace-events';
 const REDIS_CONFIG_NOTIFY_KEYSPACE_EVENTS_FLAGS = 'A$K';
 
 @Injectable()
-export class BullQueuesService implements OnModuleInit {
+export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
   private readonly _queues: { [queueName: string]: Queue } = {};
   private readonly _schedulers: { [queueName: string]: QueueScheduler } = {};
 
   constructor(
-    private readonly eventEmitter: EventEmitter2,
+    private readonly eventEmitter: TypedEmitter<BullQueuesServiceEvents>,
     @InjectLogger(BullQueuesService)
     private readonly logger: LoggerService,
     private readonly redisService: RedisService,
@@ -64,7 +68,7 @@ export class BullQueuesService implements OnModuleInit {
     });
   }
 
-  private getLoadedQueues(): string[] {
+  getLoadedQueues(): string[] {
     return Object.keys(this._queues);
   }
 
@@ -215,86 +219,104 @@ export class BullQueuesService implements OnModuleInit {
     }
   }
 
+  async onModuleDestroy() {
+    this.logger.log('Destroying....');
+    await this.redisService.getClients().forEach(async (client) => {
+      await client.quit();
+    });
+
+    this.eventEmitter.emit(EVENT_TYPES.QUEUE_SERVICE_CLOSED);
+  }
+
+  private async clientReady(client) {
+    this.logger.log(
+      'Redis connection READY! Configuring watchers for bull queues.',
+    );
+
+    await this.configureKeyspaceEventNotifications();
+
+    const previouslyLoadedQueues = this.getLoadedQueues();
+    let newlyLoadedQueues: Array<any> = [];
+    this.logger.debug(
+      `Queues currently monitored: ${
+        previouslyLoadedQueues.length > 0
+          ? previouslyLoadedQueues.join(', ')
+          : '<none>'
+      }`,
+    );
+    const queuePrefixes =
+      this.configService.config.BULL_WATCH_QUEUE_PREFIXES.split(',').map(
+        (item) => item.trim(),
+      );
+    // loop through each queue prefix and add anything
+    // we find
+    for (const queuePrefix of queuePrefixes) {
+      this.logger.log(`Loading queues from queuePrefix: '${queuePrefix}'`);
+
+      newlyLoadedQueues = (
+        await Promise.all([
+          // this.findAndPopulateQueues(`${queuePrefix}:*:stalled-check`),
+          //this.findAndPopulateQueues(`${queuePrefix}:*:id`),
+          this.findAndPopulateQueues(`${queuePrefix}:*:meta`),
+        ])
+      ).flat();
+
+      // subscribe to keyspace events
+      client.psubscribe(
+        `__keyspace@0__:${queuePrefix}:*:meta`,
+        (err, count) => {
+          this.logger.log(`Subscribed to keyspace events for ${queuePrefix}`);
+        },
+      );
+    }
+
+    // logic to handle incoming events
+    client.on(
+      REDIS_EVENT_TYPES.PMESSAGE,
+      async (pattern: string, channel: string, message: string) => {
+        const queueMatch = parseBullQueue(channel);
+        await this.processMessage(
+          message as REDIS_KEYSPACE_EVENT_TYPES,
+          queueMatch.queuePrefix,
+          queueMatch.queueName,
+        );
+      },
+    );
+
+    /**
+     * In the event that we are reloading this configuration (perhaps after a loss of
+     * connection) we'll want to ensure that we prune any queues that may have been removed
+     * during the outage.
+     */
+    const queuesToPrune = previouslyLoadedQueues.filter(
+      (x) => !newlyLoadedQueues.includes(x),
+    );
+    this.logger.log(
+      `Pruning unused queues: ${
+        queuesToPrune.length > 0 ? queuesToPrune.join(', ') : '<none>'
+      }`,
+    );
+    for (const queueToPrune of queuesToPrune) {
+      const queueDetails = this.splitQueueKey(queueToPrune);
+      await this.removeQueue(
+        queueDetails.queuePrefix,
+        queueDetails.queueName,
+      );
+    }
+
+    this.eventEmitter.emit(EVENT_TYPES.QUEUE_SERVICE_READY);
+  }
+
   async onModuleInit() {
     this.logger.log('Bootstrapping');
     const client = await this.redisService.getClient(REDIS_CLIENTS.SUBSCRIBE);
 
     this.logger.log('Waiting for redis to be ready');
+    
+    this.clientReady(client);
+    
     client.on(REDIS_EVENT_TYPES.READY, async () => {
-      this.logger.log(
-        'Redis connection READY! Configuring watchers for bull queues.',
-      );
-
-      await this.configureKeyspaceEventNotifications();
-
-      const previouslyLoadedQueues = this.getLoadedQueues();
-      let newlyLoadedQueues: Array<any> = [];
-      this.logger.debug(
-        `Queues currently monitored: ${
-          previouslyLoadedQueues.length > 0
-            ? previouslyLoadedQueues.join(', ')
-            : '<none>'
-        }`,
-      );
-      const queuePrefixes =
-        this.configService.config.BULL_WATCH_QUEUE_PREFIXES.split(',').map(
-          (item) => item.trim(),
-        );
-      // loop through each queue prefix and add anything
-      // we find
-      for (const queuePrefix of queuePrefixes) {
-        this.logger.log(`Loading queues from queuePrefix: '${queuePrefix}'`);
-
-        newlyLoadedQueues = (
-          await Promise.all([
-            // this.findAndPopulateQueues(`${queuePrefix}:*:stalled-check`),
-            //this.findAndPopulateQueues(`${queuePrefix}:*:id`),
-            this.findAndPopulateQueues(`${queuePrefix}:*:meta`),
-          ])
-        ).flat();
-
-        // subscribe to keyspace events
-        client.psubscribe(
-          `__keyspace@0__:${queuePrefix}:*:meta`,
-          (err, count) => {
-            this.logger.log(`Subscribed to keyspace events for ${queuePrefix}`);
-          },
-        );
-      }
-
-      // logic to handle incoming events
-      client.on(
-        REDIS_EVENT_TYPES.PMESSAGE,
-        async (pattern: string, channel: string, message: string) => {
-          const queueMatch = parseBullQueue(channel);
-          await this.processMessage(
-            message as REDIS_KEYSPACE_EVENT_TYPES,
-            queueMatch.queuePrefix,
-            queueMatch.queueName,
-          );
-        },
-      );
-
-      /**
-       * In the event that we are reloading this configuration (perhaps after a loss of
-       * connection) we'll want to ensure that we prune any queues that may have been removed
-       * during the outage.
-       */
-      const queuesToPrune = previouslyLoadedQueues.filter(
-        (x) => !newlyLoadedQueues.includes(x),
-      );
-      this.logger.log(
-        `Pruning unused queues: ${
-          queuesToPrune.length > 0 ? queuesToPrune.join(', ') : '<none>'
-        }`,
-      );
-      for (const queueToPrune of queuesToPrune) {
-        const queueDetails = this.splitQueueKey(queueToPrune);
-        await this.removeQueue(
-          queueDetails.queuePrefix,
-          queueDetails.queueName,
-        );
-      }
+      this.clientReady(client);
     });
     client.on(REDIS_EVENT_TYPES.RECONNECTING, () => {
       this.logger.debug('Attempting to reconnect to redis...');

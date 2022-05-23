@@ -451,3 +451,8 @@ From: https://github.com/bee-queue/arena. To use this UI you'll need to set the 
 
 ## Roadmap
 See the [roadmap](https://github.com/ejhayes/bull-monitor/projects/1) for idas on how to improve this project.
+
+## UI support
+- https://github.com/abdatta/bulls-eye
+- https://github.com/hans-lizihan/bull-master
+- Disable scheduling?
