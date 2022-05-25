@@ -4,6 +4,7 @@ export enum REDIS_KEYSPACE_EVENT_TYPES {
 }
 
 export enum REDIS_EVENT_TYPES {
+  CLOSE = 'close',
   END = 'end',
   ERROR = 'error',
   PMESSAGE = 'pmessage',

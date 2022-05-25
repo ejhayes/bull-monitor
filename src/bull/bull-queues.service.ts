@@ -3,6 +3,7 @@ import { InjectLogger, LoggerService } from '@app/logger';
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { Mutex } from 'async-mutex';
 import { Queue, QueueScheduler } from 'bullmq';
+import Redis from 'ioredis';
 import { RedisService } from 'nestjs-redis';
 import { TypedEmitter } from 'tiny-typed-emitter2';
 import {
@@ -37,6 +38,7 @@ const REDIS_CONFIG_NOTIFY_KEYSPACE_EVENTS_FLAGS = 'A$K';
 
 @Injectable()
 export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
+  private _initialized = false;
   private readonly _queues: { [queueName: string]: Queue } = {};
   private readonly _schedulers: { [queueName: string]: QueueScheduler } = {};
 
@@ -87,23 +89,41 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
   }
 
   private addQueue(queuePrefix: string, queueName: string) {
+    const client = this.redisService.getClient(REDIS_CLIENTS.PUBLISH);
     const queueKey = this.generateQueueKey(queuePrefix, queueName);
     this.logger.debug(`Attempting to add queue: ${queueKey}`);
     if (!(queueKey in this._queues)) {
       this.logger.log(`Adding queue: ${queueKey}`);
       this._queues[queueKey] = new Queue(queueName, {
         prefix: queuePrefix,
-        connection: {
-          host: this.configService.config.REDIS_HOST,
-          port: this.configService.config.REDIS_PORT,
-        },
+        connection: client,
       });
+      this._queues[queueKey].on('error', (err) => {
+        Error.captureStackTrace(err);
+        this.logger.error(err.stack);
+        this.removeQueue(queuePrefix, queueName);
+      });
+      /**
+       * From: https://docs.bullmq.io/guide/connections
+       *
+       * Every class will consume at least one Redis connection, but it
+       * is also possible to reuse connections in some situations. For example,
+       * the Queue and Worker classes can accept an existing ioredis instance, and
+       * by that reusing that connection, however QueueScheduler and QueueEvents
+       * cannot do that because they require blocking connections to Redis, which
+       * makes it impossible to reuse them.
+       */
       this._schedulers[queueKey] = new QueueScheduler(queueName, {
         prefix: queuePrefix,
         connection: {
           host: this.configService.config.REDIS_HOST,
           port: this.configService.config.REDIS_PORT,
         },
+      });
+      this._schedulers[queueKey].on('error', (err) => {
+        Error.captureStackTrace(err);
+        this.logger.error(err.stack);
+        this.removeQueue(queuePrefix, queueName);
       });
       this.eventEmitter.emit(
         EVENT_TYPES.QUEUE_CREATED,
@@ -121,8 +141,14 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
         EVENT_TYPES.QUEUE_REMOVED,
         new QueueRemovedEvent(queuePrefix, queueName),
       );
-      await this._queues[queueKey].close();
-      await this._schedulers[queueKey].close();
+      try {
+        await this._queues[queueKey].close();
+        await this._schedulers[queueKey].close();
+      } catch (err) {
+        // in the event of an error just ignore it and move on
+        this.logger.error(err);
+      }
+
       delete this._queues[queueKey];
       delete this._schedulers[queueKey];
     }
@@ -147,7 +173,7 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
           }
         })
         .on('end', () => {
-          resolve(Object.keys(loadedQueues));
+          resolve(Array.from(loadedQueues));
         })
         .on('error', (err) => {
           this.logger.error(`${err.name}: ${err.message}`);
@@ -226,9 +252,12 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
     });
 
     this.eventEmitter.emit(EVENT_TYPES.QUEUE_SERVICE_CLOSED);
+    this.eventEmitter.removeAllListeners();
   }
 
-  private async clientReady(client) {
+  private async initializeClient(client: Redis) {
+    //if (this._initialized) return;
+
     this.logger.log(
       'Redis connection READY! Configuring watchers for bull queues.',
     );
@@ -298,34 +327,48 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
     );
     for (const queueToPrune of queuesToPrune) {
       const queueDetails = this.splitQueueKey(queueToPrune);
-      await this.removeQueue(
-        queueDetails.queuePrefix,
-        queueDetails.queueName,
-      );
+      await this.removeQueue(queueDetails.queuePrefix, queueDetails.queueName);
     }
 
+    this._initialized = true;
     this.eventEmitter.emit(EVENT_TYPES.QUEUE_SERVICE_READY);
   }
 
   async onModuleInit() {
     this.logger.log('Bootstrapping');
-    const client = await this.redisService.getClient(REDIS_CLIENTS.SUBSCRIBE);
-
+    const subscriber = await this.redisService.getClient(
+      REDIS_CLIENTS.SUBSCRIBE,
+    );
+    const publisher = await this.redisService.getClient(REDIS_CLIENTS.PUBLISH);
     this.logger.log('Waiting for redis to be ready');
-    
-    this.clientReady(client);
-    
-    client.on(REDIS_EVENT_TYPES.READY, async () => {
-      this.clientReady(client);
+
+    if (subscriber.status == 'ready') {
+      this.initializeClient(subscriber);
+    }
+
+    subscriber.on(REDIS_EVENT_TYPES.READY, async () => {
+      this.initializeClient(subscriber);
     });
-    client.on(REDIS_EVENT_TYPES.RECONNECTING, () => {
+    subscriber.on(REDIS_EVENT_TYPES.RECONNECTING, () => {
       this.logger.debug('Attempting to reconnect to redis...');
     });
-    client.on(REDIS_EVENT_TYPES.ERROR, (err) => {
+    publisher.on(REDIS_EVENT_TYPES.ERROR, (err) => {
       this.logger.error(err);
     });
-    client.on(REDIS_EVENT_TYPES.END, () => {
-      this.logger.log('Connection closed, good bye.');
+    subscriber.on(REDIS_EVENT_TYPES.ERROR, (err) => {
+      this.logger.error(err);
+    });
+    publisher.on(REDIS_EVENT_TYPES.END, () => {
+      this.logger.log('Connection ended');
+    });
+    subscriber.on(REDIS_EVENT_TYPES.END, () => {
+      this.logger.log('Connection ended');
+    });
+    publisher.on(REDIS_EVENT_TYPES.CLOSE, () => {
+      this.logger.log('Connection closed');
+    });
+    subscriber.on(REDIS_EVENT_TYPES.CLOSE, () => {
+      this.logger.log('Connection closed');
     });
   }
 }
