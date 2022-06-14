@@ -5,6 +5,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Queue } from 'bullmq';
 import Redis from 'ioredis';
+import { queue } from 'rxjs';
 import { TypedEmitter } from 'tiny-typed-emitter2';
 import { BullQueuesService } from './bull-queues.service';
 import { EVENT_TYPES } from './bull.enums';
@@ -35,9 +36,7 @@ describe(BullQueuesService.name, () => {
   });
 
   beforeEach(async () => {
-    console.log('FLUSHING');
     await redis.flushall('SYNC');
-    console.log('FLUSHED');
 
     moduleRef = await Test.createTestingModule({
       imports: [
@@ -56,9 +55,7 @@ describe(BullQueuesService.name, () => {
   });
 
   afterEach(async () => {
-    console.log('Starting Destroy');
     await moduleRef.close();
-    console.log('Destroy done');
   });
 
   describe('No Queues', () => {
@@ -73,19 +70,21 @@ describe(BullQueuesService.name, () => {
 
     it('detects new queue', (done) => {
       const expectedQueueName = 'expectedQueueName';
+      let queue: Queue;
 
       events.on(EVENT_TYPES.QUEUE_SERVICE_READY, () => {
-        new Queue(expectedQueueName, {
+        queue = new Queue(expectedQueueName, {
           connection: {
-            host: config.config.REDIS_HOST,
-            port: config.config.REDIS_PORT,
+            host: redisHost,
+            port: redisPort,
           },
         });
+        queue.on('error', jest.fn());
       });
 
       events.on(EVENT_TYPES.QUEUE_CREATED, (event) => {
         expect(event.queueName).toEqual(expectedQueueName);
-        done();
+        queue.disconnect().then(() => done());
       });
 
       service.onModuleInit();
@@ -93,14 +92,17 @@ describe(BullQueuesService.name, () => {
 
     it('detects a removed queue', (done) => {
       const expectedQueueName = 'expectedRemovedQueue';
+      let queue: Queue;
 
       events.on(EVENT_TYPES.QUEUE_SERVICE_READY, () => {
-        const queue = new Queue(expectedQueueName, {
+        queue = new Queue(expectedQueueName, {
           connection: {
             host: config.config.REDIS_HOST,
             port: config.config.REDIS_PORT,
           },
         });
+
+        queue.on('error', jest.fn());
 
         queue.pause().then(() => {
           queue.obliterate();
@@ -109,39 +111,45 @@ describe(BullQueuesService.name, () => {
 
       events.on(EVENT_TYPES.QUEUE_REMOVED, (event) => {
         expect(event.queueName).toEqual(expectedQueueName);
-        done();
+        queue.disconnect().then(() => done());
       });
 
       service.onModuleInit();
-    }, 120000);
+    }, 5000);
   });
 
   describe('Existing Queues', () => {
     it('loads queues that already exist in redis', (done) => {
       const expectedQueueSize = 5;
-      const promises = [];
+      const queues = [];
 
       for (let i = 0; i < expectedQueueSize; i++) {
         const queue = new Queue(`test-${i}`, {
-          connection: redis,
+          connection: {
+            host: redisHost,
+            port: redisPort,
+            reconnectOnError: () => false,
+          },
         });
+        queue.on('error', jest.fn());
 
-        promises.push(queue.waitUntilReady());
+        queues.push(queue);
       }
 
       events.on(EVENT_TYPES.QUEUE_SERVICE_READY, () => {
         expect(service.getLoadedQueues().length).toEqual(expectedQueueSize);
-        done();
+
+        Promise.all(queues.map((q) => q.disconnect())).then(() => done());
       });
 
-      Promise.all(promises).then(() => {
+      Promise.all(queues.map((q) => q.waitUntilReady())).then(() => {
         service.onModuleInit();
       });
     });
   });
 
-  describe.only('Network Connectivity Issues', () => {
-    it.only('captures new queues after loss of connectivity', (done) => {
+  describe('Network Connectivity Issues', () => {
+    it('captures new queues after loss of connectivity', (done) => {
       const queue = new Queue('some-dummy-1', {
         connection: {
           host: redisHost,
@@ -150,9 +158,7 @@ describe(BullQueuesService.name, () => {
         },
       });
       let otherQueue: Queue;
-      queue.on('error', (err) => {
-        // do nothing
-      });
+      queue.on('error', jest.fn());
 
       const eventFn = jest
         .fn()
@@ -165,9 +171,7 @@ describe(BullQueuesService.name, () => {
                 reconnectOnError: () => false,
               },
             });
-            otherQueue.on('error', (err) => {
-              // do nothing
-            });
+            otherQueue.on('error', jest.fn());
 
             otherQueue.waitUntilReady().then(() => {
               expect(service.getLoadedQueues().length).toEqual(1);
@@ -198,8 +202,13 @@ describe(BullQueuesService.name, () => {
     it('captures removed queues after loss of connectivity', (done) => {
       const expectedRemovalQueue = 'dummy-remove-queue-1';
       const queue = new Queue(expectedRemovalQueue, {
-        connection: redis,
+        connection: {
+          host: redisHost,
+          port: redisPort,
+          reconnectOnError: () => false,
+        },
       });
+      queue.on('error', jest.fn());
       const removeFn = jest.fn();
 
       const eventFn = jest
@@ -213,9 +222,7 @@ describe(BullQueuesService.name, () => {
            * Need to ensure the delete happens before reconnection occurs
            */
           return redis.client('KILL', 'SKIPME', 'YES').then(() => {
-            return queue.obliterate().then(() => {
-              console.log('Delete done!');
-            });
+            return queue.obliterate();
           });
         })
         .mockImplementationOnce(() => {
@@ -231,7 +238,7 @@ describe(BullQueuesService.name, () => {
            */
           expect(service.getLoadedQueues().length).toEqual(0);
 
-          done();
+          queue.disconnect().then(() => done());
         });
 
       events.on(EVENT_TYPES.QUEUE_SERVICE_READY, eventFn);

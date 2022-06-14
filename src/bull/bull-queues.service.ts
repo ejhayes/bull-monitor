@@ -169,7 +169,7 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
     });
   }
 
-  private registerRedisEventListeners(client: Redis) {
+  private async registerRedisEventListeners(client: Redis) {
     if (this._initialized) return;
 
     const queuePrefixes =
@@ -181,10 +181,15 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
     // we find
     for (const queuePrefix of queuePrefixes) {
       // subscribe to keyspace events
-      client.psubscribe(
+      await client.psubscribe(
         `__keyspace@0__:${queuePrefix}:*:meta`,
         (err, count) => {
-          this.logger.log(`Subscribed to keyspace events for ${queuePrefix}`);
+          if (err) {
+            this.logger.error(err.stack);
+          }
+          this.logger.log(
+            `Subscribed to ${count} keyspace event(s) for '${queuePrefix}'`,
+          );
         },
       );
     }
@@ -209,13 +214,19 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
     this._initialized = true;
   }
 
-  private deregisterRedisEventListeners(client: Redis) {
+  private async deregisterRedisEventListeners(client: Redis) {
     if (!this._initialized) return;
 
     this.logger.debug(`Deregistering ${REDIS_EVENT_TYPES.PMESSAGE} listener`);
     client.removeAllListeners(REDIS_EVENT_TYPES.PMESSAGE);
 
-    client.punsubscribe();
+    // we want to make sure we are unsubscribed but if an error gets thrown
+    // (e.g. closed connection) that also accomplishes the same goal
+    try {
+      await client.punsubscribe();
+    } catch (err) {
+      this.logger.error(err);
+    }
 
     this._initialized = false;
   }
@@ -342,7 +353,7 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
       });
     }
 
-/*
+    /*
     this.redisService.getClients().forEach(async (client) => {
       client.removeAllListeners();
       console.log(`Attempting to close a client: ${client}`);
@@ -416,7 +427,7 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
       await this.removeQueue(queueDetails.queuePrefix, queueDetails.queueName);
     }
 
-    this.registerRedisEventListeners(client);
+    await this.registerRedisEventListeners(client);
     this.eventEmitter.emit(EVENT_TYPES.QUEUE_SERVICE_READY);
   }
 
@@ -461,11 +472,11 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
     publisher.on(REDIS_EVENT_TYPES.CLOSE, () => {
       this.logger.log(`[${REDIS_CLIENTS.PUBLISH}] Connection closed`);
     });
-    subscriber.on(REDIS_EVENT_TYPES.CLOSE, () => {
+    subscriber.on(REDIS_EVENT_TYPES.CLOSE, async () => {
       // this is to ensure that on connection close we do not listen
       // to redis events until connection is re-established and list
       // of queues is full recreated.
-      this.deregisterRedisEventListeners(subscriber);
+      await this.deregisterRedisEventListeners(subscriber);
       this.logger.log(`[${REDIS_CLIENTS.SUBSCRIBE}] Connection closed`);
     });
   }
