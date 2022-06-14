@@ -15,6 +15,10 @@ export class ConfigService {
      */
     COLLECT_NODEJS_METRICS_INTERVAL_MS: num({ default: 60000 }),
     /**
+     * Disable logging (only permitted when NODE_ENV is 'test')
+     */
+    DISABLE_LOGGING: bool({default: false}),
+    /**
      * Automatically update redis configuration (false requires you
      * to manually set keyspace notifications)
      */

@@ -18,6 +18,7 @@ import { LoggerMeta, LoggerModuleOptions } from './interfaces';
 export class LoggerService extends NestLogger {
   private static loggerLastTimestamp: number;
   private readonly env: string;
+  private readonly silent: boolean;
   private readonly logLabel: string;
   private readonly logLevel: string;
   private readonly logger: WinstonLogger;
@@ -32,6 +33,9 @@ export class LoggerService extends NestLogger {
     this.logLabel = this.opts.label || process.env.LOG_LABEL;
     this.logLevel = this.opts.level || process.env.LOG_LEVEL;
     this.pid = process.pid;
+    this.silent =
+      this.opts.silent ||
+      ['true', '1'].includes((process.env.DISABLE_LOGGING || '').toLowerCase());
 
     this.logger = this.createLogger();
   }
@@ -75,6 +79,7 @@ export class LoggerService extends NestLogger {
     });
 
     return createLogger({
+      silent: this.env == Environments.TEST && this.silent,
       format: combine(
         colorize({ all: true }),
         label({ label: this.logLabel }),
@@ -95,6 +100,7 @@ export class LoggerService extends NestLogger {
   private createProdLogger(): WinstonLogger {
     return createLogger({
       exitOnError: false,
+      silent: this.env == Environments.TEST && this.silent,
       format: format.combine(
         format.label({
           label: this.logLabel,

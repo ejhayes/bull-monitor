@@ -1,39 +1,45 @@
+
 import { ConfigService } from '@app/config';
 import { LoggerModule } from '@app/logger';
 import { EventEmitterModule } from '@nestjs/event-emitter';
-import { Test } from '@nestjs/testing';
+import { Test, TestingModule } from '@nestjs/testing';
 import { Queue } from 'bullmq';
 import Redis from 'ioredis';
 import { TypedEmitter } from 'tiny-typed-emitter2';
 import { BullQueuesService } from './bull-queues.service';
-import { EVENT_TYPES, REDIS_CLIENTS } from './bull.enums';
+import { EVENT_TYPES } from './bull.enums';
 import { BullQueuesServiceEvents } from './bull.interfaces';
 import { BullModule } from './bull.module';
 import { BullMQMetricsFactory } from './bullmq-metrics.factory';
-import { RedisService } from 'nestjs-redis';
 
 /**
  * IMPORTANT: Redis **MUST** be running or this test suite will fail
  */
 
+const redisHost = process.env.REDIS_HOST;
+const redisPort = Number(process.env.REDIS_PORT);
+
 describe(BullQueuesService.name, () => {
+  let moduleRef: TestingModule;
   let service: BullQueuesService;
   let config: ConfigService;
   let events: TypedEmitter<BullQueuesServiceEvents>;
   let redis: Redis;
-  let redisClient: RedisService;
 
   beforeAll(async () => {
-    redis = new Redis(Number(process.env.REDIS_PORT), process.env.REDIS_PORT);
+    redis = new Redis(redisPort, redisHost);
+  });
+
+  afterAll(async () => {
+    await redis.quit();
   });
 
   beforeEach(async () => {
-    // must be enab led for this to work
-    process.env.REDIS_CONFIGURE_KEYSPACE_NOTIFICATIONS = '1';
+    console.log('FLUSHING');
+    await redis.flushall('SYNC');
+    console.log('FLUSHED');
 
-    await redis.flushall();
-
-    const moduleRef = await Test.createTestingModule({
+    moduleRef = await Test.createTestingModule({
       imports: [
         LoggerModule.forRoot({}),
         EventEmitterModule.forRoot(),
@@ -47,11 +53,12 @@ describe(BullQueuesService.name, () => {
     service = await moduleRef.resolve(BullQueuesService);
     config = moduleRef.get(ConfigService);
     events = await moduleRef.resolve(TypedEmitter);
-    redisClient = await moduleRef.resolve(RedisService);
   });
 
   afterEach(async () => {
-    await service.onModuleDestroy();
+    console.log('Starting Destroy');
+    await moduleRef.close();
+    console.log('Destroy done');
   });
 
   describe('No Queues', () => {
@@ -106,7 +113,7 @@ describe(BullQueuesService.name, () => {
       });
 
       service.onModuleInit();
-    });
+    }, 120000);
   });
 
   describe('Existing Queues', () => {
@@ -133,71 +140,107 @@ describe(BullQueuesService.name, () => {
     });
   });
 
-  it('captures new queues after loss of connectivity', (done) => {
-    const queue = new Queue('some-dummy-1', {
-      connection: redis,
-    });
-
-    const eventFn = jest
-      .fn()
-      .mockImplementationOnce(() => {
-        return redis.client('KILL', 'SKIPME', 'YES').then(() => {
-          const otherQueue = new Queue('some-dummy-2', {
-            connection: redis,
-          });
-
-          otherQueue.waitUntilReady().then(() => {
-            expect(service.getLoadedQueues().length).toEqual(1);
-          });
-        });
-      })
-      .mockImplementationOnce(() => {
-        expect(service.getLoadedQueues().length).toEqual(2);
-        done();
+  describe.only('Network Connectivity Issues', () => {
+    it.only('captures new queues after loss of connectivity', (done) => {
+      const queue = new Queue('some-dummy-1', {
+        connection: {
+          host: redisHost,
+          port: redisPort,
+          reconnectOnError: () => false,
+        },
+      });
+      let otherQueue: Queue;
+      queue.on('error', (err) => {
+        // do nothing
       });
 
-    events.on(EVENT_TYPES.QUEUE_SERVICE_READY, eventFn);
-
-    queue.waitUntilReady().then(() => {
-      service.onModuleInit();
-    });
-  });
-
-  // TODO: not working. there is a timing issue where the queue/queuescheduler
-  // instances created here wind up recreating the queue configuration in redis
-  // even if we have attempted to delete this information. to recreate this issue:
-  // - kill all redis connections
-  // - delete bullmq key from redis over a new connection
-  /*
-  it('captures removed queues after loss of connectivity', (done) => {
-    const expectedRemovalQueue = 'dummy-remove-queue-1';
-    const queue = new Queue(expectedRemovalQueue, {
-      connection: redis,
-    });
-
-    const eventFn = jest
-      .fn()
-      .mockImplementationOnce(() => {
-        expect(service.getLoadedQueues().length).toEqual(1);
-
-        return queue.close().then(() => {
+      const eventFn = jest
+        .fn()
+        .mockImplementationOnce(() => {
           return redis.client('KILL', 'SKIPME', 'YES').then(() => {
-            return redis.del(`bull:${expectedRemovalQueue}:meta`);
+            otherQueue = new Queue('some-dummy-2', {
+              connection: {
+                host: redisHost,
+                port: redisPort,
+                reconnectOnError: () => false,
+              },
+            });
+            otherQueue.on('error', (err) => {
+              // do nothing
+            });
+
+            otherQueue.waitUntilReady().then(() => {
+              expect(service.getLoadedQueues().length).toEqual(1);
+            });
           });
+        })
+        .mockImplementationOnce(() => {
+          expect(service.getLoadedQueues().length).toEqual(2);
+          Promise.all([queue.disconnect(), otherQueue.disconnect()]).then(() =>
+            done(),
+          );
+          //expect(errorFn).toBeCalled();
+          //done();
         });
-      })
-      .mockImplementationOnce(() => {
-        expect(service.getLoadedQueues().length).toEqual(0);
-        done();
+
+      events.on(EVENT_TYPES.QUEUE_SERVICE_READY, eventFn);
+
+      queue.waitUntilReady().then(() => {
+        service.onModuleInit();
       });
+    }, 5000);
 
-    events.on(EVENT_TYPES.QUEUE_SERVICE_READY, eventFn);
+    // TODO: not working. there is a timing issue where the queue/queuescheduler
+    // instances created here wind up recreating the queue configuration in redis
+    // even if we have attempted to delete this information. to recreate this issue:
+    // - kill all redis connections
+    // - delete bullmq key from redis over a new connection
+    it('captures removed queues after loss of connectivity', (done) => {
+      const expectedRemovalQueue = 'dummy-remove-queue-1';
+      const queue = new Queue(expectedRemovalQueue, {
+        connection: redis,
+      });
+      const removeFn = jest.fn();
 
-    queue.waitUntilReady().then(() => {
-      service.onModuleInit();
+      const eventFn = jest
+        .fn()
+        .mockImplementationOnce(() => {
+          expect(service.getLoadedQueues().length).toEqual(1);
+
+          events.on(EVENT_TYPES.QUEUE_REMOVED, removeFn);
+
+          /**
+           * Need to ensure the delete happens before reconnection occurs
+           */
+          return redis.client('KILL', 'SKIPME', 'YES').then(() => {
+            return queue.obliterate().then(() => {
+              console.log('Delete done!');
+            });
+          });
+        })
+        .mockImplementationOnce(() => {
+          expect(removeFn).toHaveBeenCalledWith(
+            expect.objectContaining({
+              queueName: expectedRemovalQueue,
+              queuePrefix: 'bull',
+            }),
+          );
+
+          /**
+           * Client is killed and starts reconnect attempt right away
+           */
+          expect(service.getLoadedQueues().length).toEqual(0);
+
+          done();
+        });
+
+      events.on(EVENT_TYPES.QUEUE_SERVICE_READY, eventFn);
+
+      queue.waitUntilReady().then(() => {
+        service.onModuleInit();
+      });
     });
   });
-  */
 
   // loss of connectivity
 

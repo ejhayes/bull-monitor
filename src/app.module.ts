@@ -21,6 +21,7 @@ import { VersionModule } from './version/version.module';
           env: configService.config.NODE_ENV,
           label: configService.config.LOG_LABEL,
           level: configService.config.LOG_LEVEL as LOG_LEVELS,
+          silent: configService.config.DISABLE_LOGGING,
         };
       },
     }),
