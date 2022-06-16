@@ -8,10 +8,6 @@ export interface LoggerModuleOptions {
    */
   env?: string;
   /**
-   * Disable logging (only works if env is 'test')
-   */
-  silent?: boolean;
-  /**
    * Use this label when logging.
    */
   label?: string;
@@ -20,4 +16,8 @@ export interface LoggerModuleOptions {
    * display any `debug` messages).
    */
   level?: LOG_LEVELS;
+  /**
+   * Disable logging (only works if env is 'test')
+   */
+  silent?: boolean;
 }

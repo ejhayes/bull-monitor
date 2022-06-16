@@ -17,7 +17,7 @@ export class ConfigService {
     /**
      * Disable logging (only permitted when NODE_ENV is 'test')
      */
-    DISABLE_LOGGING: bool({default: false}),
+    DISABLE_LOGGING: bool({ default: false }),
     /**
      * Automatically update redis configuration (false requires you
      * to manually set keyspace notifications)
@@ -68,6 +68,10 @@ export class ConfigService {
      * Default port to use
      */
     PORT: port({ default: 3000 }),
+    /**
+     * Delay time before restarting process
+     */
+    RESTART_DELAY_MS: num({ default: 1000 }),
     /**
      * Sentry DSN to use (leave blank to disable)
      */

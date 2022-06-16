@@ -1,4 +1,3 @@
-
 import { ConfigService } from '@app/config';
 import { LoggerModule } from '@app/logger';
 import { EventEmitterModule } from '@nestjs/event-emitter';
@@ -179,7 +178,8 @@ describe(BullQueuesService.name, () => {
         })
         .mockImplementationOnce(() => {
           expect(service.getLoadedQueues().length).toEqual(2);
-          Promise.all([queue.disconnect(), otherQueue.disconnect()]).then(() => {
+          Promise.all([queue.disconnect(), otherQueue.disconnect()]).then(
+            () => {
               done();
             },
           );

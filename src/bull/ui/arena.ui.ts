@@ -58,6 +58,7 @@ export class BullArenaUi implements IBullUi {
     ((this._ui as any).locals as BullArenaLocals).Queues._config.queues = [];
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   addQueue(queuePrefix: string, queueName: string, queue: Queue) {
     ((this._ui as any).locals as BullArenaLocals).Queues._config.queues.push({
       hostId: queuePrefix,

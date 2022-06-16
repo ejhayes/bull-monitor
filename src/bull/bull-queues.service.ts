@@ -404,10 +404,6 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
   async onModuleInit() {
     this.logger.log('Bootstrapping');
 
-    process.on('uncaughtException', (err) => {
-      this.logger.error(err.stack);
-    });
-
     const subscriber = await this.redisService.getClient(
       REDIS_CLIENTS.SUBSCRIBE,
     );

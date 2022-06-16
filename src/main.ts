@@ -6,15 +6,22 @@ import { LoggerService } from './logger';
 import { OpenAPIModule } from './openapi/openapi.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const logger = new LoggerService();
+  logger.setContext(bootstrap.name);
+  const app = await NestFactory.create(AppModule, { logger });
   const configService: ConfigService = app.get(ConfigService);
-  const loggerService: LoggerService = await app.resolve(LoggerService);
-  loggerService.setContext(bootstrap.name);
-  app.useLogger(loggerService);
 
   OpenAPIModule.setup('docs', app);
 
-  loggerService.log(`Listening on HTTP port ${configService.config.PORT}`);
+  logger.log(`Listening on HTTP port ${configService.config.PORT}`);
   await app.listen(configService.config.PORT);
 }
+
+// uncaught redis or mutex issues should result in the process being restarted
+process.on('uncaughtException', (err) => {
+  console.error(err.name);
+  console.error(err.stack);
+  process.exit(1);
+});
+
 bootstrap();
