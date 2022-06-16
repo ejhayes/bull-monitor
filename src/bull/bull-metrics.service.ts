@@ -1,4 +1,3 @@
-import { ConfigService } from '@app/config/config.service';
 import { InjectLogger, LoggerService } from '@app/logger';
 import { Injectable } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
@@ -29,9 +28,9 @@ export class BullMetricsService {
   }
 
   @OnEvent(EVENT_TYPES.QUEUE_REMOVED)
-  private removeQueueMetrics(event: QueueRemovedEvent) {
+  private async removeQueueMetrics(event: QueueRemovedEvent) {
     this.logger.log(`Removing queue metrics for ${event.uniqueName}`);
-    this._queues[event.uniqueName].remove();
+    await this._queues[event.uniqueName].remove();
     delete this._queues[event.uniqueName];
   }
 }

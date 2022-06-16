@@ -1,9 +1,8 @@
 import { ConfigService } from '@app/config/config.service';
 import { InjectLogger, LoggerService } from '@app/logger';
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
-import { Mutex } from 'async-mutex';
+import { Mutex, withTimeout } from 'async-mutex';
 import { Queue, QueueScheduler } from 'bullmq';
-import Redis from 'ioredis';
 import { RedisService } from 'nestjs-redis';
 import { TypedEmitter } from 'tiny-typed-emitter2';
 import {
@@ -41,8 +40,8 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
   private _initialized = false;
   private readonly _queues: { [queueName: string]: Queue } = {};
   private readonly _schedulers: { [queueName: string]: QueueScheduler } = {};
-  private readonly _redisMutex = new Mutex();
-  private readonly _bullMutex = new Mutex();
+  private readonly _redisMutex = withTimeout(new Mutex(), 10000);
+  private readonly _bullMutex = withTimeout(new Mutex(), 10000);
 
   constructor(
     private readonly eventEmitter: TypedEmitter<BullQueuesServiceEvents>,
@@ -160,18 +159,21 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
 
         delete this._queues[queueKey];
         delete this._schedulers[queueKey];
+
         this.eventEmitter.emit(
           EVENT_TYPES.QUEUE_REMOVED,
           new QueueRemovedEvent(queuePrefix, queueName),
         );
+
         this.logger.debug(`Queue removed: ${queueKey}`);
       }
     });
   }
 
-  private async registerRedisEventListeners(client: Redis) {
+  private async registerRedisEventListeners() {
     if (this._initialized) return;
 
+    const subscriber = this.redisService.getClient(REDIS_CLIENTS.SUBSCRIBE);
     const queuePrefixes =
       this.configService.config.BULL_WATCH_QUEUE_PREFIXES.split(',').map(
         (item) => item.trim(),
@@ -181,7 +183,7 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
     // we find
     for (const queuePrefix of queuePrefixes) {
       // subscribe to keyspace events
-      await client.psubscribe(
+      await subscriber.psubscribe(
         `__keyspace@0__:${queuePrefix}:*:meta`,
         (err, count) => {
           if (err) {
@@ -196,7 +198,7 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
 
     // logic to handle incoming events
     this.logger.log(`Registering ${REDIS_EVENT_TYPES.PMESSAGE} listener`);
-    client.on(
+    subscriber.on(
       REDIS_EVENT_TYPES.PMESSAGE,
       async (pattern: string, channel: string, message: string) => {
         this.logger.debug(
@@ -214,16 +216,18 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
     this._initialized = true;
   }
 
-  private async deregisterRedisEventListeners(client: Redis) {
+  private async deregisterRedisEventListeners() {
     if (!this._initialized) return;
 
+    const subscriber = this.redisService.getClient(REDIS_CLIENTS.SUBSCRIBE);
+
     this.logger.debug(`Deregistering ${REDIS_EVENT_TYPES.PMESSAGE} listener`);
-    client.removeAllListeners(REDIS_EVENT_TYPES.PMESSAGE);
+    subscriber.removeAllListeners(REDIS_EVENT_TYPES.PMESSAGE);
 
     // we want to make sure we are unsubscribed but if an error gets thrown
     // (e.g. closed connection) that also accomplishes the same goal
     try {
-      await client.punsubscribe();
+      await subscriber.punsubscribe();
     } catch (err) {
       this.logger.error(err);
     }
@@ -232,11 +236,8 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async findAndPopulateQueues(match: string): Promise<string[]> {
-    const client = await this.redisService.getClient(REDIS_CLIENTS.SUBSCRIBE);
+    const client = await this.redisService.getClient(REDIS_CLIENTS.PUBLISH);
     const loadedQueues = new Set([]);
-
-    this.logger.debug(`Found these keys: ${await client.keys('*')}`);
-
     return new Promise((resolve, reject) => {
       client
         .scanStream({ type: 'hash', match, count: 100 })
@@ -325,127 +326,108 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  async onModuleDestroy() {
-    this.logger.log(`Destroying module: ${BullQueuesService.name}`);
-
-    this.deregisterRedisEventListeners(
-      this.redisService.getClient(REDIS_CLIENTS.SUBSCRIBE),
-    );
-
-    this.eventEmitter.removeAllListeners();
-
-    // close all connections
-    for (const queue of [
-      Object.values(this._queues),
-      Object.values(this._schedulers),
-    ].flat()) {
-      this.logger.warn(`Closing queue: ${queue.name}`);
-      await new Promise<void>(async (resolve) => {
-        (await queue.client).on('close', () => {
-          this.logger.warn(`Closed queue: ${queue.name}`);
-          resolve();
-        });
-        (await queue.client).on('error', () => {
-          this.logger.error(`Closed queue with error: ${queue.name}`);
-          resolve();
-        });
-        queue.close();
-      });
-    }
-
-    /*
-    this.redisService.getClients().forEach(async (client) => {
-      client.removeAllListeners();
-      console.log(`Attempting to close a client: ${client}`);
-      await new Promise<void>((resolve) => {
-        client.on('error', (err) => {
-          this.logger.error('An error was had');
-          this.logger.error(err);
-          resolve();
-        });
-        client.on('close', () => {
-          this.logger.debug('I AM CLOSED');
-          resolve();
-        });
-      });
-      await client.quit();
+  private async initializeSubscriber() {
+    return this._redisMutex.runExclusive(async () => {
+      return await this.registerRedisEventListeners();
     });
-    */
-
-    this.eventEmitter.emit(EVENT_TYPES.QUEUE_SERVICE_CLOSED);
   }
 
-  private async initializeClient(client: Redis) {
-    this.logger.log(
-      'Redis connection READY! Configuring watchers for bull queues.',
-    );
+  private async uninitializeSubscriber() {
+    return this._redisMutex.runExclusive(async () => {
+      // this is to ensure that on connection close we do not listen
+      // to redis events until connection is re-established and list
+      // of queues is full recreated.
+      return await this.deregisterRedisEventListeners();
+    });
+  }
 
-    await this.configureKeyspaceEventNotifications();
-
-    const previouslyLoadedQueues = this.getLoadedQueues();
-    let newlyLoadedQueues: Array<any> = [];
-    this.logger.debug(
-      `Queues currently monitored: ${
-        previouslyLoadedQueues.length > 0
-          ? previouslyLoadedQueues.join(', ')
-          : '<none>'
-      }`,
-    );
-    const queuePrefixes =
-      this.configService.config.BULL_WATCH_QUEUE_PREFIXES.split(',').map(
-        (item) => item.trim(),
+  private async initializePublisher() {
+    return this._redisMutex.runExclusive(async () => {
+      this.logger.log(
+        'Redis connection READY! Configuring watchers for bull queues.',
       );
-    // loop through each queue prefix and add anything
-    // we find
-    for (const queuePrefix of queuePrefixes) {
-      this.logger.log(`Loading queues from queuePrefix: '${queuePrefix}'`);
 
-      newlyLoadedQueues = (
-        await Promise.all([
-          // this.findAndPopulateQueues(`${queuePrefix}:*:stalled-check`),
-          //this.findAndPopulateQueues(`${queuePrefix}:*:id`),
-          this.findAndPopulateQueues(`${queuePrefix}:*:meta`),
-        ])
-      ).flat();
-    }
+      await this.configureKeyspaceEventNotifications();
 
-    /**
-     * In the event that we are reloading this configuration (perhaps after a loss of
-     * connection) we'll want to ensure that we prune any queues that may have been removed
-     * during the outage.
-     */
-    const queuesToPrune = previouslyLoadedQueues.filter(
-      (x) => !newlyLoadedQueues.includes(x),
-    );
-    this.logger.log(
-      `Pruning unused queues: ${
-        queuesToPrune.length > 0 ? queuesToPrune.join(', ') : '<none>'
-      }`,
-    );
-    for (const queueToPrune of queuesToPrune) {
-      const queueDetails = this.splitQueueKey(queueToPrune);
-      await this.removeQueue(queueDetails.queuePrefix, queueDetails.queueName);
-    }
+      const previouslyLoadedQueues = this.getLoadedQueues();
+      let newlyLoadedQueues: Array<any> = [];
+      this.logger.debug(
+        `Queues currently monitored: ${
+          previouslyLoadedQueues.length > 0
+            ? previouslyLoadedQueues.join(', ')
+            : '<none>'
+        }`,
+      );
+      const queuePrefixes =
+        this.configService.config.BULL_WATCH_QUEUE_PREFIXES.split(',').map(
+          (item) => item.trim(),
+        );
+      // loop through each queue prefix and add anything
+      // we find
+      for (const queuePrefix of queuePrefixes) {
+        this.logger.log(`Loading queues from queuePrefix: '${queuePrefix}'`);
 
-    await this.registerRedisEventListeners(client);
-    this.eventEmitter.emit(EVENT_TYPES.QUEUE_SERVICE_READY);
+        newlyLoadedQueues = (
+          await Promise.all([
+            // this.findAndPopulateQueues(`${queuePrefix}:*:stalled-check`),
+            //this.findAndPopulateQueues(`${queuePrefix}:*:id`),
+            this.findAndPopulateQueues(`${queuePrefix}:*:meta`),
+          ])
+        ).flat();
+      }
+
+      /**
+       * In the event that we are reloading this configuration (perhaps after a loss of
+       * connection) we'll want to ensure that we prune any queues that may have been removed
+       * during the outage.
+       */
+      const queuesToPrune = previouslyLoadedQueues.filter(
+        (x) => !newlyLoadedQueues.includes(x),
+      );
+      this.logger.log(
+        `Pruning unused queues: ${
+          queuesToPrune.length > 0 ? queuesToPrune.join(', ') : '<none>'
+        }`,
+      );
+      for (const queueToPrune of queuesToPrune) {
+        const queueDetails = this.splitQueueKey(queueToPrune);
+        await this.removeQueue(
+          queueDetails.queuePrefix,
+          queueDetails.queueName,
+        );
+      }
+
+      this.eventEmitter.emit(EVENT_TYPES.QUEUE_SERVICE_READY);
+    });
   }
 
   async onModuleInit() {
     this.logger.log('Bootstrapping');
+
+    process.on('uncaughtException', (err) => {
+      this.logger.error(err.stack);
+    });
+
     const subscriber = await this.redisService.getClient(
       REDIS_CLIENTS.SUBSCRIBE,
     );
     const publisher = await this.redisService.getClient(REDIS_CLIENTS.PUBLISH);
 
-    this.logger.log('Waiting for redis to be ready');
-
     if (subscriber.status == 'ready') {
-      this.initializeClient(subscriber);
+      this.initializeSubscriber();
+    }
+
+    if (publisher.status == 'ready') {
+      this.initializePublisher();
     }
 
     subscriber.on(REDIS_EVENT_TYPES.READY, async () => {
-      this.initializeClient(subscriber);
+      this.logger.log(`[${REDIS_CLIENTS.SUBSCRIBE}] ready`);
+      await this.initializeSubscriber();
+    });
+    publisher.on(REDIS_EVENT_TYPES.READY, async () => {
+      this.logger.log(`[${REDIS_CLIENTS.PUBLISH}] ready`);
+      await this.initializePublisher();
     });
     subscriber.on(REDIS_EVENT_TYPES.RECONNECTING, () => {
       this.logger.warn(
@@ -469,15 +451,60 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
     subscriber.on(REDIS_EVENT_TYPES.END, () => {
       this.logger.log(`[${REDIS_CLIENTS.SUBSCRIBE}] Connection ended`);
     });
-    publisher.on(REDIS_EVENT_TYPES.CLOSE, () => {
+    publisher.on(REDIS_EVENT_TYPES.CLOSE, async () => {
+      //await this.uninitializeClient();
       this.logger.log(`[${REDIS_CLIENTS.PUBLISH}] Connection closed`);
     });
     subscriber.on(REDIS_EVENT_TYPES.CLOSE, async () => {
-      // this is to ensure that on connection close we do not listen
-      // to redis events until connection is re-established and list
-      // of queues is full recreated.
-      await this.deregisterRedisEventListeners(subscriber);
+      await this.uninitializeSubscriber();
       this.logger.log(`[${REDIS_CLIENTS.SUBSCRIBE}] Connection closed`);
     });
+  }
+
+  async onModuleDestroy() {
+    this.logger.log('Destroying module');
+
+    this.eventEmitter.removeAllListeners();
+
+    // close all connections
+    for (const queue of [
+      Object.values(this._queues),
+      Object.values(this._schedulers),
+    ].flat()) {
+      this.logger.warn(`Closing queue: ${queue.name}`);
+      await new Promise<void>(async (resolve) => {
+        (await queue.client).on('close', () => {
+          this.logger.warn(`Closed queue: ${queue.name}`);
+          resolve();
+        });
+        (await queue.client).on('error', () => {
+          this.logger.error(`Closed queue with error: ${queue.name}`);
+          resolve();
+        });
+        queue.close();
+      });
+    }
+
+    // close all existing connections
+    await Promise.all(
+      Array.from(await this.redisService.getClients()).map(
+        ([name, client]) =>
+          new Promise<void>((resolve) => {
+            client.removeAllListeners();
+            client.quit((err) => {
+              if (err) {
+                this.logger.error(err.stack);
+                resolve();
+                return;
+              }
+
+              this.logger.log(`${name}: Connection closed`);
+              resolve();
+            });
+          }),
+      ),
+    );
+
+    this.eventEmitter.emit(EVENT_TYPES.QUEUE_SERVICE_CLOSED);
   }
 }

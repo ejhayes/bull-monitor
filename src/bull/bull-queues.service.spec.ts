@@ -5,7 +5,6 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Queue } from 'bullmq';
 import Redis from 'ioredis';
-import { queue } from 'rxjs';
 import { TypedEmitter } from 'tiny-typed-emitter2';
 import { BullQueuesService } from './bull-queues.service';
 import { EVENT_TYPES } from './bull.enums';
@@ -180,11 +179,10 @@ describe(BullQueuesService.name, () => {
         })
         .mockImplementationOnce(() => {
           expect(service.getLoadedQueues().length).toEqual(2);
-          Promise.all([queue.disconnect(), otherQueue.disconnect()]).then(() =>
-            done(),
+          Promise.all([queue.disconnect(), otherQueue.disconnect()]).then(() => {
+              done();
+            },
           );
-          //expect(errorFn).toBeCalled();
-          //done();
         });
 
       events.on(EVENT_TYPES.QUEUE_SERVICE_READY, eventFn);
@@ -194,11 +192,6 @@ describe(BullQueuesService.name, () => {
       });
     }, 5000);
 
-    // TODO: not working. there is a timing issue where the queue/queuescheduler
-    // instances created here wind up recreating the queue configuration in redis
-    // even if we have attempted to delete this information. to recreate this issue:
-    // - kill all redis connections
-    // - delete bullmq key from redis over a new connection
     it('captures removed queues after loss of connectivity', (done) => {
       const expectedRemovalQueue = 'dummy-remove-queue-1';
       const queue = new Queue(expectedRemovalQueue, {
@@ -248,14 +241,4 @@ describe(BullQueuesService.name, () => {
       });
     });
   });
-
-  // loss of connectivity
-
-  /**
-   * Items to test
-   * - Create job queue in prefix (and not in prefix)
-   * - Remove job
-   * - Recreate redis queue
-   * - Loss of connectivity
-   */
 });
