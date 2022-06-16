@@ -66,6 +66,7 @@ export class BullArenaUi implements IBullUi {
       prefix: queuePrefix,
       redis: {
         host: this.configService.config.REDIS_HOST,
+        password: this.configService.config.REDIS_PASSWORD,
         port: this.configService.config.REDIS_PORT,
       },
       type: QUEUE_TYPES.BULLMQ,

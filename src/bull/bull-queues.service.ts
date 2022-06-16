@@ -105,6 +105,7 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
           connection: {
             host: this.configService.config.REDIS_HOST,
             port: this.configService.config.REDIS_PORT,
+            password: this.configService.config.REDIS_PASSWORD,
           },
         });
         this._queues[queueKey].on('error', (err) => {
@@ -127,6 +128,7 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
           connection: {
             host: this.configService.config.REDIS_HOST,
             port: this.configService.config.REDIS_PORT,
+            password: this.configService.config.REDIS_PASSWORD,
           },
         });
         this._schedulers[queueKey].on('error', (err) => {

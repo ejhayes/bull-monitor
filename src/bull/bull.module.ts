@@ -21,6 +21,7 @@ import { BullMQMetricsFactory } from './bullmq-metrics.factory';
             return {
               name: client,
               host: configService.config.REDIS_HOST,
+              password: configService.config.REDIS_PASSWORD,
               port: configService.config.REDIS_PORT,
               enableReadyCheck: true,
               reconnectOnError: () => true,

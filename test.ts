@@ -24,6 +24,7 @@ const config = cleanEnv(process.env, {
   PREFIX: str({ default: 'bull' }),
   MAX_JOBS: num({ default: 10 }),
   REDIS_HOST: str({ default: '127.0.0.1' }),
+  REDIS_PASSWORD: str({ default: '' }),
   REDIS_PORT: port({ default: 6001 }),
   CREATE_DELAY_MS: num({ default: 0 }),
 });
@@ -41,6 +42,7 @@ const main = async () => {
     connection: {
       host: config.REDIS_HOST,
       port: config.REDIS_PORT,
+      password: config.REDIS_PASSWORD,
     },
   });
 
@@ -70,6 +72,7 @@ const main = async () => {
         connection: {
           host: config.REDIS_HOST,
           port: config.REDIS_PORT,
+          password: config.REDIS_PASSWORD,
         },
       },
     );
