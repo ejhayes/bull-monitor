@@ -1,6 +1,6 @@
 {
   "name": "bull-monitor",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Simple utility to monitor your bull queues",
   "author": "Eric Hayes <eric@deployfx.com>",
   "private": true,
@@ -8,7 +8,7 @@
   "scripts": {
     "prebuild": "rimraf dist",
     "build": "nest build",
-    "ci:build": "npm run build && docker-compose build bull-monitor",
+    "ci:build": "npm run build && docker-compose build --build-arg BUILD_VERSION=$npm_package_version bull-monitor",
     "ci:publish": "npm run ci:build && docker-compose push bull-monitor",
     "format": "prettier --write test.ts \"src/**/*.ts\" \"test/**/*.ts\"",
     "generate:create": "CREATE_DELAY_MS=100 ACTION=create ts-node test.ts",

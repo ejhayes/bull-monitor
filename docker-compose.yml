@@ -6,7 +6,7 @@ services:
     build:
       context: .
       args:
-        - BUILD_VERSION=local
+        BUILD_VERSION: local
     ports: 
       - 3000:3000
     env_file:

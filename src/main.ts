@@ -5,6 +5,7 @@ import '@sentry/tracing';
 
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
+  release: process.env.VERSION,
 });
 
 // eslint-disable-next-line import/order
