@@ -2,7 +2,7 @@ version: '3'
 
 services:
   bull-monitor:
-    image: ejhayes/nodejs-bull-monitor:latest
+    image: bull-monitor:latest
     build:
       context: .
       args:
