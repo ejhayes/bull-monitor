@@ -1,6 +1,6 @@
 {
   "name": "bull-monitor",
-  "version": "1.1.0",
+  "version": "1.0.0",
   "description": "Simple utility to monitor your bull queues",
   "author": "Eric Hayes <eric@deployfx.com>",
   "private": true,
@@ -8,7 +8,7 @@
   "scripts": {
     "prebuild": "rimraf dist",
     "build": "nest build",
-    "ci:build": "npm run build && docker-compose build --build-arg BUILD_VERSION=$npm_package_version bull-monitor",
+    "ci:build": "npm run build && docker-compose build bull-monitor",
     "ci:publish": "npm run ci:build && docker-compose push bull-monitor",
     "format": "prettier --write test.ts \"src/**/*.ts\" \"test/**/*.ts\"",
     "generate:create": "CREATE_DELAY_MS=100 ACTION=create ts-node test.ts",
@@ -59,6 +59,7 @@
     "winston": "^3.7.2"
   },
   "devDependencies": {
+    "@auto-it/docker": "^10.37.1",
     "@faker-js/faker": "^6.3.1",
     "@nestjs/cli": "^8.2.5",
     "@nestjs/schematics": "^8.0.11",
@@ -72,6 +73,7 @@
     "@types/supertest": "^2.0.12",
     "@typescript-eslint/eslint-plugin": "^5.23.0",
     "@typescript-eslint/parser": "^5.23.0",
+    "auto": "^10.37.1",
     "chalk": "^4.1.2",
     "dotenv-cli": "^5.1.0",
     "eslint": "^8.15.0",
