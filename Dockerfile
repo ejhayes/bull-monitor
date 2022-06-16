@@ -18,4 +18,4 @@ ENV NODE_ENV="production" \
     LOG_LABEL=$LOG_LABEL \
     VERSION=$BUILD_VERSION
 EXPOSE 3000
-ENTRYPOINT ["node", "main.js"]
+ENTRYPOINT ["node", "daemon.js"]
