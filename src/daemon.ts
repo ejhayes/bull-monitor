@@ -23,7 +23,7 @@ class Daemon {
       ? ['nest', `start`]
       : `${Daemon.ENTRYPOINT}.js`;
 
-  private static log = new LoggerService(); //logger(Daemon.name);
+  private static log = new LoggerService();
   private static config = new ConfigService();
 
   static start() {
@@ -32,7 +32,7 @@ class Daemon {
     const child = new Monitor(Daemon.ENTRYPOINT_COMMAND, {
       killTree: true,
       minUptime: 2000,
-      spinSleepTime: 1000, //config.RESTART_DELAY_MS,
+      spinSleepTime: Daemon.config.config.RESTART_DELAY_MS,
     });
 
     child.on('exit', () => {
