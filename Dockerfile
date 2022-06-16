@@ -4,7 +4,7 @@ FROM node:16-alpine as build
 WORKDIR /app
 RUN apk add --no-cache openssh git
 COPY package* ./
-RUN npm install --production
+RUN npm install --omit=dev
 COPY dist ./
 
 FROM node:16-alpine

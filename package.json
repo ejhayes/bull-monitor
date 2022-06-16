@@ -2,7 +2,10 @@
   "name": "bull-monitor",
   "version": "1.0.0",
   "description": "Simple utility to monitor your bull queues",
-  "author": "Eric Hayes <eric@deployfx.com>",
+  "author": {
+    "name": "Eric Hayes",
+    "email": "eric@deployfx.com"
+  },
   "private": true,
   "license": "MIT",
   "scripts": {
