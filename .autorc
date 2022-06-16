@@ -1,5 +1,5 @@
 {
   "plugins": [
-    ["docker", { "registry": "ejhayes/nodejs-bull-monitor", "tagLatest": true}]
+    ["docker", { "registry": "hub.docker.com", "tagLatest": true}]
   ]
 }
