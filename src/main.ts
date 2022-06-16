@@ -1,4 +1,13 @@
 import 'source-map-support/register';
+
+import * as Sentry from '@sentry/node';
+import '@sentry/tracing';
+
+Sentry.init({
+  dsn: process.env.SENTRY_DSN,
+});
+
+// eslint-disable-next-line import/order
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ConfigService } from './config/config.service';
