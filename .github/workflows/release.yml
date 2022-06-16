@@ -35,7 +35,7 @@ jobs:
       - name: Create Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          IMAGE: "ejhayes/nodejs-bull-monitor:latest"
+          IMAGE: "ejhayes/nodejs-bull-monitor"
         run: |
           npm ci
           npm run ci:build
