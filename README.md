@@ -435,12 +435,17 @@ npm run services:stop
 ```
 
 ## Available UIs
-There are 2 options currently available for UIs: bull-board and arena.
+There are 3 options currently available for UIs: `bull-board`, `arena`, and `bull-master`.
 
 ## bull-board
 From: https://github.com/felixmosh/bull-board#readme. This is the default UI. If you want to be explicit just set `UI` environment variable to `bull-board`.
 
 ![](screenshots/bull-board-ui.png)
+
+## bull-master
+From: https://github.com/hans-lizihan/bull-master. To use this UI you'll need to set the `UI` environment variable to `bull-master`.
+
+![](screenshots/bull-master-ui.png)
 
 ## bull-arena
 From: https://github.com/bee-queue/arena. To use this UI you'll need to set the `UI` environment variable to `arena`.
