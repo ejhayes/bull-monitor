@@ -1,7 +1,7 @@
 {
   "plugins": [
     ["docker", { "registry": "ejhayes/nodejs-bull-monitor", "tagLatest": true}],
-    ["released"],
+    ["released", { "includeBotPrs": true }],
     ["first-time-contributor"]
   ]
 }
