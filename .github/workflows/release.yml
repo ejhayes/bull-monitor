@@ -1,6 +1,9 @@
 name: Release
 
-on: [push]
+on:
+  push:
+    branches:
+      - main
 
 jobs:
   release:
@@ -32,13 +35,15 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - run: npm ci
+
+      - run: npm run ci:build
+
       - name: Create Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          IMAGE: "bull-monitor:latest"
+          IMAGE: 'bull-monitor:latest'
         run: |
-          npm ci
-          npm run ci:build
           npx auto shipit
 
       - name: Docker Hub Description

@@ -1,0 +1,106 @@
+name: Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+concurrency:
+  group: ${{ github.head_ref }}-pr
+  cancel-in-progress: true
+
+jobs:
+  init:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - id: cache
+        uses: actions/cache@v2
+        with:
+          path: ./node_modules
+          key: modules-${{ hashFiles('package-lock.json') }}
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+      - if: steps.cache.outputs.cache-hit != 'true'
+        run: npm ci --ignore-scripts
+
+  lint:
+    runs-on: ubuntu-latest
+    needs: [init]
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+      - uses: actions/cache@v2
+        with:
+          path: ./node_modules
+          key: modules-${{ hashFiles('package-lock.json') }}
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+      - uses: wearerequired/lint-action@v1
+        with:
+          eslint: true
+          eslint_extensions: ts
+          prettier: true
+          prettier_extensions: ts,json,js,yml
+          auto_fix: true
+          commit_message: 'chore(lint): Fix code style issues with ${linter}'
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          git_email: 'lint-action@github.com'
+
+  build:
+    runs-on: ubuntu-latest
+    needs: [init]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Prepare repository
+        run: git fetch --unshallow --tags
+      - uses: actions/cache@v2
+        with:
+          path: ./node_modules
+          key: modules-${{ hashFiles('package-lock.json') }}
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+      - run: npm run ci:build
+      - env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IMAGE: 'bull-monitor:latest'
+        run: npx auto shipit -d
+
+  test:
+    runs-on: ubuntu-latest
+    needs: [init]
+    timeout-minutes: 3
+    services:
+      # Label used to access the service container
+      redis:
+        # Docker Hub image
+        image: redis
+        # Set health checks to wait until redis has started
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6001:6379
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/cache@v2
+        with:
+          path: ./node_modules
+          key: modules-${{ hashFiles('package-lock.json') }}
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+      - uses: mattallty/jest-github-action@v1
+        with:
+          test-command: npm run test:ci
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: unit tests
+        uses: paambaati/codeclimate-action@v2.7.5
+        env:
+          CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
