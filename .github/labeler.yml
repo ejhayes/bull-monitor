@@ -12,10 +12,6 @@ labels:
     files:
       - '.+.md'
       - 'screenshots'
-  - label: 'yaml'
-    files:
-      - '.+.yaml'
-      - '.+.yml'
   - label: 'config'
     files:
       - '.github'
