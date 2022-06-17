@@ -1,4 +1,5 @@
 import { ConfigService } from '@app/config/config.service';
+import { InjectLogger, LoggerService } from '@app/logger';
 import { InjectMetrics, MetricsService } from '@app/metrics';
 import { Injectable } from '@nestjs/common';
 import { Job, Queue, QueueEvents } from 'bullmq';
@@ -46,6 +47,8 @@ export class BullMQMetricsFactory {
     private readonly configService: ConfigService,
     @InjectMetrics()
     metricsService: MetricsService,
+    @InjectLogger(BullMQMetricsFactory)
+    private readonly logger: LoggerService,
   ) {
     this.jobs_active_total = metricsService.createGauge({
       name: 'jobs_active_total',
@@ -190,7 +193,12 @@ export class BullMQMetricsFactory {
       connection: {
         host: this.configService.config.REDIS_HOST,
         port: this.configService.config.REDIS_PORT,
+        password: this.configService.config.REDIS_PASSWORD,
       },
+    });
+
+    queueEvents.on('error', (err) => {
+      this.logger.error(err.stack);
     });
 
     queueEvents.on('stalled', async (event) => {
@@ -249,24 +257,32 @@ export class BullMQMetricsFactory {
     });
 
     const metricInterval = setInterval(async () => {
-      const { completed, failed, delayed, active, waiting } =
-        await queue.getJobCounts(
-          'completed',
-          'failed',
-          'delayed',
-          'active',
-          'waiting',
-        );
+      try {
+        const { completed, failed, delayed, active, waiting } =
+          await queue.getJobCounts(
+            'completed',
+            'failed',
+            'delayed',
+            'active',
+            'waiting',
+          );
 
-      this.jobs_completed_total.set(labels, completed);
-      this.jobs_failed_total.set(labels, failed);
-      this.jobs_delayed_total.set(labels, delayed);
-      this.jobs_active_total.set(labels, active);
-      this.jobs_waiting_total.set(labels, waiting);
+        this.jobs_completed_total.set(labels, completed);
+        this.jobs_failed_total.set(labels, failed);
+        this.jobs_delayed_total.set(labels, delayed);
+        this.jobs_active_total.set(labels, active);
+        this.jobs_waiting_total.set(labels, waiting);
+      } catch (err) {
+        this.logger.error(err);
+      }
     }, this.configService.config.BULL_COLLECT_QUEUE_METRICS_INTERVAL_MS);
 
     return {
-      remove: () => {
+      remove: async () => {
+        this.logger.log(`Removing metrics for ${queuePrefix}::${queueName}`);
+        this.logger.debug(
+          `Removing metrics with labels: ${JSON.stringify(labels)}`,
+        );
         clearInterval(metricInterval);
         this.job_attempts.remove(labels);
         this.job_duration.remove(labels);
@@ -277,6 +293,12 @@ export class BullMQMetricsFactory {
         this.jobs_failed.remove(labels);
         this.jobs_stalled.remove(labels);
         this.jobs_waiting.remove(labels);
+
+        try {
+          await queueEvents.disconnect();
+        } catch (err) {
+          this.logger.error(err);
+        }
       },
     };
   }

@@ -3,11 +3,25 @@ on: [push]
 jobs:
   run-tests:
     runs-on: ubuntu-latest
+    timeout-minutes: 3
+    services:
+      # Label used to access the service container
+      redis:
+        # Docker Hub image
+        image: redis
+        # Set health checks to wait until redis has started
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6001:6379
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
         with:
-          node-version: '14'
+          node-version: '16'
       - name: Cache node modules
         uses: actions/cache@v2
         env:

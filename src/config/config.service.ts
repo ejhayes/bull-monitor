@@ -15,6 +15,10 @@ export class ConfigService {
      */
     COLLECT_NODEJS_METRICS_INTERVAL_MS: num({ default: 60000 }),
     /**
+     * Disable logging (only permitted when NODE_ENV is 'test')
+     */
+    DISABLE_LOGGING: bool({ default: false }),
+    /**
      * Automatically update redis configuration (false requires you
      * to manually set keyspace notifications)
      */
@@ -27,6 +31,10 @@ export class ConfigService {
      * Redis port to fetch queues from
      */
     REDIS_PORT: port(),
+    /**
+     * Redis password (if needed)
+     */
+    REDIS_PASSWORD: str({ default: '' }),
     /**
      * Comma separate list of bull queue prefixes to
      * monitor (default: bull)
@@ -61,6 +69,10 @@ export class ConfigService {
      */
     PORT: port({ default: 3000 }),
     /**
+     * Delay time before restarting process
+     */
+    RESTART_DELAY_MS: num({ default: 1000 }),
+    /**
      * Sentry DSN to use (leave blank to disable)
      */
     SENTRY_DSN: str({ default: '' }),
@@ -69,7 +81,7 @@ export class ConfigService {
      */
     UI: str({
       default: UI_TYPES.BULL_BOARD,
-      choices: [UI_TYPES.BULL_BOARD, UI_TYPES.ARENA],
+      choices: [UI_TYPES.BULL_BOARD, UI_TYPES.ARENA, UI_TYPES.BULL_MASTER],
     }),
     /**
      * Version

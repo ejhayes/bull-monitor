@@ -3,11 +3,11 @@ import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 
-describe('Arena UI', () => {
+describe('Bull Board UI', () => {
   let app: INestApplication;
 
   beforeAll(async () => {
-    process.env.UI = 'arena';
+    process.env.UI = 'bull-board';
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],

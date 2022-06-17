@@ -2,11 +2,11 @@ version: '3'
 
 services:
   bull-monitor:
-    image: ejhayes/nodejs-bull-monitor:latest
+    image: bull-monitor:latest
     build:
       context: .
       args:
-        - BUILD_VERSION=local
+        BUILD_VERSION: local
     ports: 
       - 3000:3000
     env_file:

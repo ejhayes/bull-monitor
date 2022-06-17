@@ -1,0 +1,15 @@
+name: PR Version Labels
+on:
+  pull_request:
+    types: [opened, labeled, unlabeled]
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ejhayes/github-action-required-labels@v1.2.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          mode: exactly
+          count: 1
+          labels: "major,minor,patch,skip-release"

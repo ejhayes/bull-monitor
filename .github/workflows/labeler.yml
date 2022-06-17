@@ -1,0 +1,19 @@
+name: Label PR
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+concurrency:
+  group: ${{ github.head_ref }}-label
+  cancel-in-progress: true
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    if: github.event.action == 'synchronize' || github.event.action == 'opened'
+    steps:
+      - uses: ejhayes/labeler@master
+        env:
+          GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
+        with:
+          action_asset_url: 'https://github.com/ejhayes/labeler/releases/latest/download/action.tar.gz'

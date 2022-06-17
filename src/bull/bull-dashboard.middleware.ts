@@ -1,5 +1,5 @@
 import { InjectLogger, LoggerService } from '@app/logger';
-import { Injectable, NestMiddleware, Scope } from '@nestjs/common';
+import { Injectable, NestMiddleware } from '@nestjs/common';
 import { NextFunction, Request, Response } from 'express';
 import { BullUiService } from './bull-ui.service';
 

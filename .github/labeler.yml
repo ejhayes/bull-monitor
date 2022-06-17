@@ -1,0 +1,41 @@
+---
+version: 1
+labels:
+  - label: 'small'
+    size-below: 10
+  - label: 'medium'
+    size-above: 9
+    size-below: 100
+  - label: 'large'
+    size-above: 100
+  - label: 'documentation'
+    files:
+      - '.+.md'
+      - 'screenshots'
+  - label: 'config'
+    files:
+      - '.github'
+      - '.autorc'
+      - '.eslintrc.js'
+      - '.prettierrc'
+      - 'Dockerfile'
+      - 'docker-compose.yml'
+      - 'grafana.ini'
+      - 'grafana*.yml'
+      - 'nest-cli.json'
+      - 'smtp-auth'
+      - 'tsconfig*.json'
+      - '.all-contributorsrc'
+      - 'environments'
+      - '.husky'
+      - 'src/config'
+  - label: 'tests'
+    files:
+      - 'test'
+      - '*.spec*'
+  - label: 'dependencies'
+    files:
+      - 'package*.json'
+  - label: 'code'
+    files:
+      - 'src'

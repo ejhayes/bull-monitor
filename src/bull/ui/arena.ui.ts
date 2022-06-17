@@ -58,6 +58,7 @@ export class BullArenaUi implements IBullUi {
     ((this._ui as any).locals as BullArenaLocals).Queues._config.queues = [];
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   addQueue(queuePrefix: string, queueName: string, queue: Queue) {
     ((this._ui as any).locals as BullArenaLocals).Queues._config.queues.push({
       hostId: queuePrefix,
@@ -65,6 +66,7 @@ export class BullArenaUi implements IBullUi {
       prefix: queuePrefix,
       redis: {
         host: this.configService.config.REDIS_HOST,
+        password: this.configService.config.REDIS_PASSWORD,
         port: this.configService.config.REDIS_PORT,
       },
       type: QUEUE_TYPES.BULLMQ,
