@@ -1,3 +1,15 @@
+# v2.0.1 (Fri Jun 17 2022)
+
+#### 🐛 Bug Fix
+
+- Use all-contributors plugin [#24](https://github.com/ejhayes/bull-monitor/pull/24) ([@ejhayes](https://github.com/ejhayes))
+
+#### Authors: 1
+
+- Eric Hayes ([@ejhayes](https://github.com/ejhayes))
+
+---
+
 # v2.0.0 (Fri Jun 17 2022)
 
 :tada: This release contains work from a new contributor! :tada:
