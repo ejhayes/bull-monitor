@@ -40,3 +40,11 @@ jobs:
           npm ci
           npm run ci:build
           npx auto shipit
+
+      - name: Docker Hub Description
+        uses: peter-evans/dockerhub-description@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          repository: ejhayes/nodejs-bull-monitor
+          short-description: 'All in one bull monitoring and reporting utility'

@@ -1,0 +1,12 @@
+name: PR Version Labels
+on:
+  pull_request:
+    types: [opened, labeled, unlabeled]
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: yogevbd/enforce-label-action@2.1.0
+        with:
+          REQUIRED_LABELS_ANY: "major,minor,patch,skip-release"
+          REQUIRED_LABELS_ANY_DESCRIPTION: "Select at least one label: major, minor, patch, skip-release"

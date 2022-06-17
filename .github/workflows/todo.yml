@@ -1,0 +1,12 @@
+name: TODO workflow
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: Run tdg-github-action
+        uses: ejhayes/tdg-github-action@master
+        with:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ACTION_ASSET_URL: 'https://github.com/ejhayes/tdg-github-action/releases/latest/download/action.tar.gz'
