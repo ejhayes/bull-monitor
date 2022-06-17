@@ -7,6 +7,10 @@ jobs:
     runs-on: ubuntu-latest
     if: "!contains(github.event.head_commit.message, 'ci skip') && !contains(github.event.head_commit.message, 'skip ci')"
     steps:
+      - name: Get branch names
+        id: branch
+        uses: tj-actions/branch-names@v5.2
+
       - uses: actions/checkout@v2
 
       - name: Prepare repository
@@ -32,16 +36,19 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - run: npm ci
+
+      - run: npm run ci:build
+
       - name: Create Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           IMAGE: "bull-monitor:latest"
         run: |
-          npm ci
-          npm run ci:build
-          npx auto shipit
+          npx auto shipit ${{steps.branch.outputs.is_default == 'true' && '-d' || ''}}
 
       - name: Docker Hub Description
+        if: steps.branch.outputs.is_default == 'true'
         uses: peter-evans/dockerhub-description@v2
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}

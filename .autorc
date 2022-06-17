@@ -1,4 +1,8 @@
 {
+  "author": {
+    "name": "Eric Hayes",
+    "email": "eric@deployfx.com"
+  },
   "plugins": [
     ["docker", { "registry": "ejhayes/nodejs-bull-monitor", "tagLatest": true}],
     ["released", { "includeBotPrs": true }],
