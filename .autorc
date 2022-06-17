@@ -6,6 +6,9 @@
   "plugins": [
     ["docker", { "registry": "ejhayes/nodejs-bull-monitor", "tagLatest": true}],
     ["released", { "includeBotPrs": true }],
-    ["first-time-contributor"]
+    ["first-time-contributor"],
+    ["all-contributors", {
+      "exclude": ["dependabot", "ci-services"]
+    }]
   ]
 }
