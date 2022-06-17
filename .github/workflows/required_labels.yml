@@ -6,7 +6,10 @@ jobs:
   label:
     runs-on: ubuntu-latest
     steps:
-      - uses: yogevbd/enforce-label-action@2.1.0
+      - uses: ejhayes/github-action-required-labels@main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          REQUIRED_LABELS_ANY: "major,minor,patch,skip-release"
-          REQUIRED_LABELS_ANY_DESCRIPTION: "Select at least one label: major, minor, patch, skip-release"
+          mode: exactly
+          count: 1
+          labels: "major,minor,patch,skip-release"
