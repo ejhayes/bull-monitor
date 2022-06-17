@@ -1,16 +1,15 @@
 name: Release
 
-on: [push]
+on:
+  push:
+    branches:
+      - main
 
 jobs:
   release:
     runs-on: ubuntu-latest
     if: "!contains(github.event.head_commit.message, 'ci skip') && !contains(github.event.head_commit.message, 'skip ci')"
     steps:
-      - name: Get branch names
-        id: branch
-        uses: tj-actions/branch-names@v5.2
-
       - uses: actions/checkout@v2
 
       - name: Prepare repository
@@ -45,10 +44,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           IMAGE: "bull-monitor:latest"
         run: |
-          npx auto shipit ${{steps.branch.outputs.is_default == 'true' && '-d' || ''}}
+          npx auto shipit
 
       - name: Docker Hub Description
-        if: steps.branch.outputs.is_default == 'true'
         uses: peter-evans/dockerhub-description@v2
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}

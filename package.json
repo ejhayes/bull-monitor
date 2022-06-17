@@ -27,6 +27,7 @@
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\"",
     "lint:fix": "npm run lint --fix",
     "precommit": "npm run lint && npm run build && npm run test && npm run test:e2e",
+    "test:ci": "dotenv -e environments/test.env -e environments/local.env -- jest --coverage --testRegex '(e2e-)?spec.ts$' --forceExit --detectOpenHandles",
     "test": "dotenv -e environments/test.env -e environments/local.env -- jest",
     "test:watch": "dotenv -e environments/test.env -e environments/local.env -- jest --watch",
     "test:cov": "dotenv -e environments/test.env -e environments/local.env -- jest --coverage",
