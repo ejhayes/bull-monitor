@@ -64,7 +64,10 @@ jobs:
         with:
           node-version: '16'
       - run: npm run ci:build
-      - run: npx auto shipit -d
+      - env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IMAGE: 'bull-monitor:latest'
+        run: npx auto shipit -d
 
   test:
     runs-on: ubuntu-latest
