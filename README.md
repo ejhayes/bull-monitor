@@ -53,6 +53,7 @@ The following environment variables are supported:
 |-|-|-|-|
 | `REDIS_HOST` |x| `null` | Redis host (**IMPORTANT** must be same redis instance that stores bull jobs!) |
 | `REDIS_PORT` |x| `null` | Redis port |
+| `REDIS_PASSWORD` | | `null` | Redis password |
 | `UI` | | `bull-board` | UI to use (supported: `arena`, `bull-board`) |
 | `BULL_WATCH_QUEUE_PREFIXES` | | `bull` | Bull prefixes to monitor (globs like `prefix*` are supported) |
 | `BULL_COLLECT_QUEUE_METRICS_INTERVAL_MS` | | `60000` | How often queue metrics are gathered |
@@ -458,11 +459,6 @@ From: https://github.com/bee-queue/arena. To use this UI you'll need to set the 
 
 ## Roadmap
 See the [roadmap](https://github.com/ejhayes/bull-monitor/projects/1) for idas on how to improve this project.
-
-## UI support
-- https://github.com/abdatta/bulls-eye
-- https://github.com/hans-lizihan/bull-master
-- Disable scheduling?
 
 ## Contributors ✨
 
