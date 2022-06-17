@@ -4,7 +4,11 @@ module.exports = {
     project: 'tsconfig.json',
     sourceType: 'module',
   },
-  plugins: ['@typescript-eslint/eslint-plugin', 'typescript-sort-keys', 'import'],
+  plugins: [
+    '@typescript-eslint/eslint-plugin',
+    'typescript-sort-keys',
+    'import',
+  ],
   extends: [
     'plugin:@typescript-eslint/recommended',
     'plugin:prettier/recommended',
@@ -32,7 +36,14 @@ module.exports = {
         alphabetize: {
           order: 'asc',
         },
-        groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
+        groups: [
+          'builtin',
+          'external',
+          'internal',
+          'parent',
+          'sibling',
+          'index',
+        ],
       },
     ],
     'typescript-sort-keys/string-enum': ['error', 'asc'],

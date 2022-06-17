@@ -42,7 +42,7 @@ jobs:
       - name: Create Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          IMAGE: "bull-monitor:latest"
+          IMAGE: 'bull-monitor:latest'
         run: |
           npx auto shipit
 

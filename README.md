@@ -1,6 +1,8 @@
 # bull-monitor
+
 [![Maintainability](https://api.codeclimate.com/v1/badges/9ca0eb7b9c6191ab30e9/maintainability)](https://codeclimate.com/github/ejhayes/bull-monitor/maintainability) [![Test Coverage](https://api.codeclimate.com/v1/badges/9ca0eb7b9c6191ab30e9/test_coverage)](https://codeclimate.com/github/ejhayes/bull-monitor/test_coverage) [![Dockerhub](https://img.shields.io/docker/pulls/ejhayes/nodejs-bull-monitor.svg)](https://hub.docker.com/r/ejhayes/nodejs-bull-monitor) <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
 [![All Contributors](https://img.shields.io/badge/all_contributors-0-orange.svg?style=flat-square)](#contributors-)
+
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 This is an all-in-one tool to help you visualize and report on bull! It runs as a docker container that you can spin up with local development or host wherever you see fit. The core goal of this project is to provide realtime integration of your bull queues with existing bull tooling...without needing to run write any custom code. The following is automatically included:
@@ -27,7 +29,7 @@ To use with docker compose, add the following to `docker-compose.yml`:
 ```yml
 bull-monitor:
   image: ejhayes/nodejs-bull-monitor:latest
-  ports: 
+  ports:
     - 3000:3000
   environment:
     REDIS_HOST: <your redis host>
@@ -38,32 +40,33 @@ bull-monitor:
 
 Then run `docker-compose up bull-monitor`. Assuming no issues, the following paths are available:
 
-| Path | Description |
-|-|-|
-| [`/metrics`](localhos:3000/metrics) | Prometheus metrics |
-| [`/health`](localhos:3000/metrics) | Health endpoint (always returns `HTTP 200` with `OK` text) |
-| [`/docs`](localhos:3000/metrics) | Swagger UI |
-| [`/docs-json`](localhos:3000/metrics) | Swagger JSON definition |
-| [`/queues`](localhos:3000/metrics) | Bull UI (currently [`arena`](https://www.npmjs.com/package/bull-arena) or [`bull-board`](https://www.npmjs.com/package/bull-board)) |
+| Path                                  | Description                                                                                                                         |
+| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| [`/metrics`](localhos:3000/metrics)   | Prometheus metrics                                                                                                                  |
+| [`/health`](localhos:3000/metrics)    | Health endpoint (always returns `HTTP 200` with `OK` text)                                                                          |
+| [`/docs`](localhos:3000/metrics)      | Swagger UI                                                                                                                          |
+| [`/docs-json`](localhos:3000/metrics) | Swagger JSON definition                                                                                                             |
+| [`/queues`](localhos:3000/metrics)    | Bull UI (currently [`arena`](https://www.npmjs.com/package/bull-arena) or [`bull-board`](https://www.npmjs.com/package/bull-board)) |
 
 ## configuration
+
 The following environment variables are supported:
 
-| Environment Variable | Required | Default Value | Description |
-|-|-|-|-|
-| `REDIS_HOST` |x| `null` | Redis host (**IMPORTANT** must be same redis instance that stores bull jobs!) |
-| `REDIS_PORT` |x| `null` | Redis port |
-| `REDIS_PASSWORD` | | `null` | Redis password |
-| `UI` | | `bull-board` | UI to use (supported: `arena`, `bull-board`) |
-| `BULL_WATCH_QUEUE_PREFIXES` | | `bull` | Bull prefixes to monitor (globs like `prefix*` are supported) |
-| `BULL_COLLECT_QUEUE_METRICS_INTERVAL_MS` | | `60000` | How often queue metrics are gathered |
-| `COLLECT_NODEJS_METRICS` | | `false` | Collect NodeJS metrics and expose via prometheus |
-| `COLLECT_NODEJS_METRICS_INTERVAL_MS` | | `60000` | How often to calculate NodeJS metrics (if enabled) |
-| `REDIS_CONFIGURE_KEYSPACE_NOTIFICATIONS` | | `true` | Automatically configures redis keyspace notifications (typically not enabled by default). **IMPORTANT**: This will *NOT* work without keyspace notifications configured. |
-| `LOG_LABEL` | | `bull-monitor` | Log label to use |
-| `LOG_LEVEL` | | `info` | Log level to use (supported: `debug`, `error`, `info`, `warn`) |
-| `NODE_ENV` | | `production` | Node environment |
-| `PORT` | | `3000` | Port to use |
+| Environment Variable                     | Required | Default Value  | Description                                                                                                                                                              |
+| ---------------------------------------- | -------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `REDIS_HOST`                             | x        | `null`         | Redis host (**IMPORTANT** must be same redis instance that stores bull jobs!)                                                                                            |
+| `REDIS_PORT`                             | x        | `null`         | Redis port                                                                                                                                                               |
+| `REDIS_PASSWORD`                         |          | `null`         | Redis password                                                                                                                                                           |
+| `UI`                                     |          | `bull-board`   | UI to use (supported: `arena`, `bull-board`)                                                                                                                             |
+| `BULL_WATCH_QUEUE_PREFIXES`              |          | `bull`         | Bull prefixes to monitor (globs like `prefix*` are supported)                                                                                                            |
+| `BULL_COLLECT_QUEUE_METRICS_INTERVAL_MS` |          | `60000`        | How often queue metrics are gathered                                                                                                                                     |
+| `COLLECT_NODEJS_METRICS`                 |          | `false`        | Collect NodeJS metrics and expose via prometheus                                                                                                                         |
+| `COLLECT_NODEJS_METRICS_INTERVAL_MS`     |          | `60000`        | How often to calculate NodeJS metrics (if enabled)                                                                                                                       |
+| `REDIS_CONFIGURE_KEYSPACE_NOTIFICATIONS` |          | `true`         | Automatically configures redis keyspace notifications (typically not enabled by default). **IMPORTANT**: This will _NOT_ work without keyspace notifications configured. |
+| `LOG_LABEL`                              |          | `bull-monitor` | Log label to use                                                                                                                                                         |
+| `LOG_LEVEL`                              |          | `info`         | Log level to use (supported: `debug`, `error`, `info`, `warn`)                                                                                                           |
+| `NODE_ENV`                               |          | `production`   | Node environment                                                                                                                                                         |
+| `PORT`                                   |          | `3000`         | Port to use                                                                                                                                                              |
 
 ## getting started
 
@@ -89,10 +92,11 @@ npm run ci:build
 ```
 
 ## creating jobs
+
 Want to try this out with your own bull queues? The code below can be used to create sample jobs:
 
 ```typescript
-import Bull from 'bull'
+import Bull from 'bull';
 
 const redisHost = process.env.REDIS_HOST || '127.0.0.1';
 const redisPort = process.env.REDIS_PORT || '6001';
@@ -100,36 +104,37 @@ const queueName = process.env.QUEUE_NAME || 'send-email';
 const queuePrefix = process.env.QUEUE_PREFIX || 'bull';
 const intervalMs = process.env.INTERVAL_MS;
 const maxJobsPerInterval = Number(process.env.MAX_JOBS_PER_INTERVAL || '50');
-const processOnly = process.env.PROCESS_ONLY && process.env.PROCESS_ONLY === '1' ? true : false;
+const processOnly =
+  process.env.PROCESS_ONLY && process.env.PROCESS_ONLY === '1' ? true : false;
 
 console.log(`Using redis host ${redisHost} on port ${redisPort}`);
 
 // create queue
 const queue = new Bull(queueName, {
-    prefix: queuePrefix,
-    redis: {
-        host: redisHost,
-        port: redisPort
-    },
-    limiter: {
-      max: maxJobsPerInterval,
-      duration: 5000,
-    }
+  prefix: queuePrefix,
+  redis: {
+    host: redisHost,
+    port: redisPort,
+  },
+  limiter: {
+    max: maxJobsPerInterval,
+    duration: 5000,
+  },
 });
 
 // add some dummy processing code
 queue.process(async (job) => {
-  const delay = Math.floor(Math.random() * config.DELAY_MS)
+  const delay = Math.floor(Math.random() * config.DELAY_MS);
   console.log(`Starting job: ${job.id} with delay ${delay}`);
   job.log(`Starting job: ${job.id} with delay ${delay}`);
 
-  const fail = Math.round(Math.random()) === 1 
+  const fail = Math.round(Math.random()) === 1;
   if (fail) {
     console.log(`Job ${job.id} marked to fail`);
     job.log(`Job ${job.id} marked to fail`);
-    throw new Error(`Failing job ${job.id} for random reason`)
+    throw new Error(`Failing job ${job.id} for random reason`);
   }
-  
+
   console.log(`Job ${job.id} is now complete after the delay`);
   job.log(`Job ${job.id} is now complete after the delay`);
 });
@@ -140,17 +145,18 @@ if (!processOnly) {
     setInterval(() => {
       console.log('Adding a job....');
       incr++;
-      queue.add({
-        myJobId: incr,
-      }, { attempts: 3 });
+      queue.add(
+        {
+          myJobId: incr,
+        },
+        { attempts: 3 },
+      );
     }, Number(intervalMs));
-  }
-  else {
+  } else {
     console.log('Creating single job');
-    queue.add({someParam: 'someValue'}, {attempts: 3});
+    queue.add({ someParam: 'someValue' }, { attempts: 3 });
   }
 }
-
 ```
 
 Assuming the following is in `test.ts` and redis is running at `127.0.0.1:6001` you can run the script like this:
@@ -162,36 +168,38 @@ QUEUE_NAME=send-email QUEUE_PREFIX=bull INTERVAL_MS=1000 REDIS_HOST=127.0.0.1 RE
 The example above creates a job queue called `send-email` with queue prefix `bull` and populates it with jobs every 1 second. Jobs will randomly fail and will be reattempted up to 3 times before being marked as failing. You can also process jobs only by setting `PROCESS_ONLY` to `1`.
 
 ## prometheus metrics
-For each queue that is created  the following metrics are automatically tracked.
 
-| Metric                              | type    | description                                             |
-|-------------------------------------|---------|---------------------------------------------------------|
-| `jobs_completed_total` | `gauge` | Total number of completed jobs |
-| `jobs_failed_total` | `gauge` | Total number of failed jobs |
-| `jobs_delayed_total` | `gauge` | Total number of delayed jobs |
-| `jobs_active_total` | `gauge` | Total number of active jobs |
-| `jobs_waiting_total` | `gauge` | Total number of waiting jobs |
-| `jobs_active` | `counter` | Jobs active |
-| `jobs_waiting` | `counter` | Jobs waiting |
-| `jobs_stalled` | `counter` | Jobs stalled |
-| `jobs_failed` | `counter` | Jobs failed |
-| `jobs_completed` | `counter` | Jobs completed |
-| `jobs_delayed` | `counter` | Jobs delayed |
-| `job_duration` | `summary` | Processing time for completed/failed jobs |
-| `job_wait_duration` | `summary` | Durating spent waiting for job to start |
-| `job_attempts` | `summary` | Number of attempts made before job completed/failed |
+For each queue that is created the following metrics are automatically tracked.
+
+| Metric                 | type      | description                                         |
+| ---------------------- | --------- | --------------------------------------------------- |
+| `jobs_completed_total` | `gauge`   | Total number of completed jobs                      |
+| `jobs_failed_total`    | `gauge`   | Total number of failed jobs                         |
+| `jobs_delayed_total`   | `gauge`   | Total number of delayed jobs                        |
+| `jobs_active_total`    | `gauge`   | Total number of active jobs                         |
+| `jobs_waiting_total`   | `gauge`   | Total number of waiting jobs                        |
+| `jobs_active`          | `counter` | Jobs active                                         |
+| `jobs_waiting`         | `counter` | Jobs waiting                                        |
+| `jobs_stalled`         | `counter` | Jobs stalled                                        |
+| `jobs_failed`          | `counter` | Jobs failed                                         |
+| `jobs_completed`       | `counter` | Jobs completed                                      |
+| `jobs_delayed`         | `counter` | Jobs delayed                                        |
+| `job_duration`         | `summary` | Processing time for completed/failed jobs           |
+| `job_wait_duration`    | `summary` | Durating spent waiting for job to start             |
+| `job_attempts`         | `summary` | Number of attempts made before job completed/failed |
 
 The following labels are available:
 
-| Label Name | Description |
-|-|-|
-| `queue_prefix` | Queue Prefix |
-| `queue_name` | Queue Name |
-| `job_name` | Job name |
-| `status` | Job status (choiced: `completed`, `failed`) |
-| `error_type` | Error type (uses error class name) |
+| Label Name     | Description                                 |
+| -------------- | ------------------------------------------- |
+| `queue_prefix` | Queue Prefix                                |
+| `queue_name`   | Queue Name                                  |
+| `job_name`     | Job name                                    |
+| `status`       | Job status (choiced: `completed`, `failed`) |
+| `error_type`   | Error type (uses error class name)          |
 
 Things to note about these metrics:
+
 - Queue metrics are GLOBAL not worker specific
 - Gauge metrics (`*_total`) are refreshed every 60 seconds. To change this you'll need to set environment variable `BULL_COLLECT_QUEUE_METRICS_INTERVAL_MS` to another value.
 
@@ -214,6 +222,7 @@ npm run start:dev
 ```
 
 Once completed the following will be available:
+
 - Grafana UI: http://localhost:3001
 - Prometheus: http://localhost:3002
 - SMTP (Mailhog): http:localhost: http://localhost:3003 (username: `test`, password: `test`)
@@ -221,6 +230,7 @@ Once completed the following will be available:
 - SMTP Server (used by Grafana Alerts): `localhost:6002` (no auth required, no encryption)
 
 When you are done you can get rid of everything with:
+
 ```
 npm run services:remove
 
@@ -229,28 +239,34 @@ npm run services:stop
 ```
 
 ## Available UIs
+
 There are 3 options currently available for UIs: `bull-board`, `arena`, and `bull-master`.
 
 ## bull-board
+
 From: https://github.com/felixmosh/bull-board#readme. This is the default UI. If you want to be explicit just set `UI` environment variable to `bull-board`.
 
 ![](screenshots/bull-board-ui.png)
 
 ## bull-master
+
 From: https://github.com/hans-lizihan/bull-master. To use this UI you'll need to set the `UI` environment variable to `bull-master`.
 
 ![](screenshots/bull-master-ui.png)
 
 ## bull-arena
+
 From: https://github.com/bee-queue/arena. To use this UI you'll need to set the `UI` environment variable to `arena`.
 
 ![](screenshots/arena-ui.png)
 
 ## Security Considerations
+
 - This is intended as a back office monitoring solution. You should not make expose this publicly
 - This is currently intended to run as a single process and should not be scaled horizontally (future todo item)
 
 ## Roadmap
+
 See the [roadmap](https://github.com/ejhayes/bull-monitor/projects/1) for idas on how to improve this project.
 
 ## Contributors ✨
@@ -262,6 +278,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 <!-- markdownlint-disable -->
 <!-- markdownlint-restore -->
 <!-- prettier-ignore-end -->
+
 <!-- ALL-CONTRIBUTORS-LIST:END -->
 
 This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!
