@@ -99,7 +99,7 @@ jobs:
         with:
           test-command: npm run test:ci
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: unit tests
         uses: paambaati/codeclimate-action@v3.0.0
         env:
