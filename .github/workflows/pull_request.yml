@@ -38,7 +38,7 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: '16'
-      - uses: wearerequired/lint-action@v1
+      - uses: wearerequired/lint-action@v2
         with:
           eslint: true
           eslint_extensions: ts
