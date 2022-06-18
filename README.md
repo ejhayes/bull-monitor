@@ -2,23 +2,30 @@
 
 [![Maintainability](https://api.codeclimate.com/v1/badges/9ca0eb7b9c6191ab30e9/maintainability)](https://codeclimate.com/github/ejhayes/bull-monitor/maintainability) [![Test Coverage](https://api.codeclimate.com/v1/badges/9ca0eb7b9c6191ab30e9/test_coverage)](https://codeclimate.com/github/ejhayes/bull-monitor/test_coverage) [![Dockerhub](https://img.shields.io/docker/pulls/ejhayes/nodejs-bull-monitor.svg)](https://hub.docker.com/r/ejhayes/nodejs-bull-monitor) <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
 [![All Contributors](https://img.shields.io/badge/all_contributors-1-orange.svg?style=flat-square)](#contributors-)
+
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
+
+![](https://github.com/ejhayes/bull-monitor/releases/download/v2.0.0/bull_monitor.gif)
 
 This is an all-in-one tool to help you visualize and report on bull! It runs as a docker container that you can spin up with local development or host wherever you see fit. The core goal of this project is to provide realtime integration of your bull queues with existing bull tooling...without needing to run write any custom code. The following is automatically included:
 
 - Automatic discovery of your bull queues (just point this at your redis instance)
 - Automatic configuration of prometheus metrics for each discovered queue
-- Configurable UI support to visualize bull queues (Bull Board or Arena)
+- Configurable UI support to visualize bull queues (supported: [`arena`](https://github.com/bee-queue/arena#readme), [`bull-board`](https://github.com/felixmosh/bull-board), [`bull-master`](https://github.com/hans-lizihan/bull-master))
+- Sentry error reporting (just pass `SENTRY_DSN` environment variable)
+- [Elastic ECS](https://www.elastic.co/what-is/ecs) logging when `NODE_ENV` is set to `production`
 
 You can test it out with docker by running (if you want to access something running on your host machine and not within the docker network you can use the special hostname [`host.docker.internal`](https://docs.docker.com/docker-for-mac/networking/#use-cases-and-workarounds)):
 
 ```sh
 docker run -d --rm \
   --name bull-monitor \
+  -e "NODE_ENV=development" \
   -e "REDIS_HOST=host.docker.internal" \
   -e "REDIS_PORT=6001" \
   -e "PORT=3000" \
   -e "BULL_WATCH_QUEUE_PREFIXES=bull" \
+  -e "UI=bull-master" \
   -p 3000:3000 \
   ejhayes/nodejs-bull-monitor:latest
 ```
@@ -35,6 +42,7 @@ bull-monitor:
     REDIS_PORT: <your redis port>
     BULL_WATCH_QUEUE_PREFIXES: bull
     PORT: 3000
+    UI: bull-master
 ```
 
 Then run `docker-compose up bull-monitor`. Assuming no issues, the following paths are available:
@@ -64,8 +72,9 @@ The following environment variables are supported:
 | `REDIS_CONFIGURE_KEYSPACE_NOTIFICATIONS` |          | `true`         | Automatically configures redis keyspace notifications (typically not enabled by default). **IMPORTANT**: This will _NOT_ work without keyspace notifications configured. |
 | `LOG_LABEL`                              |          | `bull-monitor` | Log label to use                                                                                                                                                         |
 | `LOG_LEVEL`                              |          | `info`         | Log level to use (supported: `debug`, `error`, `info`, `warn`)                                                                                                           |
-| `NODE_ENV`                               |          | `production`   | Node environment                                                                                                                                                         |
+| `NODE_ENV`                               |          | `production`   | Node environment (use `development` for colorized logging)                                                                                                               |
 | `PORT`                                   |          | `3000`         | Port to use                                                                                                                                                              |
+| `SENTRY_DSN`                             |          | `null`         | Sentry DSN to send errors to (disabled if not provided)                                                                                                                  |
 
 ## getting started
 
@@ -90,83 +99,33 @@ To build the container (will be built/tagged as `ejhayes/nodejs-bull-monitor`):
 npm run ci:build
 ```
 
-## creating jobs
+## generating quues/workers
 
-Want to try this out with your own bull queues? The code below can be used to create sample jobs:
-
-```typescript
-import Bull from 'bull';
-
-const redisHost = process.env.REDIS_HOST || '127.0.0.1';
-const redisPort = process.env.REDIS_PORT || '6001';
-const queueName = process.env.QUEUE_NAME || 'send-email';
-const queuePrefix = process.env.QUEUE_PREFIX || 'bull';
-const intervalMs = process.env.INTERVAL_MS;
-const maxJobsPerInterval = Number(process.env.MAX_JOBS_PER_INTERVAL || '50');
-const processOnly =
-  process.env.PROCESS_ONLY && process.env.PROCESS_ONLY === '1' ? true : false;
-
-console.log(`Using redis host ${redisHost} on port ${redisPort}`);
-
-// create queue
-const queue = new Bull(queueName, {
-  prefix: queuePrefix,
-  redis: {
-    host: redisHost,
-    port: redisPort,
-  },
-  limiter: {
-    max: maxJobsPerInterval,
-    duration: 5000,
-  },
-});
-
-// add some dummy processing code
-queue.process(async (job) => {
-  const delay = Math.floor(Math.random() * config.DELAY_MS);
-  console.log(`Starting job: ${job.id} with delay ${delay}`);
-  job.log(`Starting job: ${job.id} with delay ${delay}`);
-
-  const fail = Math.round(Math.random()) === 1;
-  if (fail) {
-    console.log(`Job ${job.id} marked to fail`);
-    job.log(`Job ${job.id} marked to fail`);
-    throw new Error(`Failing job ${job.id} for random reason`);
-  }
-
-  console.log(`Job ${job.id} is now complete after the delay`);
-  job.log(`Job ${job.id} is now complete after the delay`);
-});
-
-if (!processOnly) {
-  if (intervalMs) {
-    console.log(`Creating job every ${intervalMs}ms`);
-    setInterval(() => {
-      console.log('Adding a job....');
-      incr++;
-      queue.add(
-        {
-          myJobId: incr,
-        },
-        { attempts: 3 },
-      );
-    }, Number(intervalMs));
-  } else {
-    console.log('Creating single job');
-    queue.add({ someParam: 'someValue' }, { attempts: 3 });
-  }
-}
-```
-
-Assuming the following is in `test.ts` and redis is running at `127.0.0.1:6001` you can run the script like this:
+A test script is included so you can try creating and/or processing bull jobs. Examples:
 
 ```
-QUEUE_NAME=send-email QUEUE_PREFIX=bull INTERVAL_MS=1000 REDIS_HOST=127.0.0.1 REDIS_PORT=6001 npx ts-node test.ts
+# create a queue and add jobs to it (no processing)
+npm run generate:create
+
+# process queue jobs only
+npm run generate:process
+
+# create and process jobs
+npm run generate
 ```
 
-The example above creates a job queue called `send-email` with queue prefix `bull` and populates it with jobs every 1 second. Jobs will randomly fail and will be reattempted up to 3 times before being marked as failing. You can also process jobs only by setting `PROCESS_ONLY` to `1`.
+The default behavior of `npm run generate` is to:
+
+- Create `MyBullQueue` queue if it doesn't exist.
+- Add a dummy job every `10` milliseconds.
+- Add a worker that with concurrency `15` that processes up to `200` jobs per `1` second (jobs retried up to `4` times).
+- Configure each job to take up to `200` milliseconds. Jobs can fail randomly.
+
+See `./test.ts` for more details.
 
 ## prometheus metrics
+
+_NOTE:_ metrics are available at the `/metrics` endpoint
 
 For each queue that is created the following metrics are automatically tracked.
 
@@ -202,40 +161,31 @@ Things to note about these metrics:
 - Queue metrics are GLOBAL not worker specific
 - Gauge metrics (`*_total`) are refreshed every 60 seconds. To change this you'll need to set environment variable `BULL_COLLECT_QUEUE_METRICS_INTERVAL_MS` to another value.
 
-Note that you can integrate this with Grafana to set up things like alerts for queues:
+## grafana support
 
-Queue Overview: https://grafana.com/grafana/dashboards/14538 (import into grafana using id: `14538`)
-![](screenshots/grafana-all-queues.png)
+You can visualize your queue metrics in Grafana! There are several pieces that need to be running for this to work:
 
-Queue Specific: https://grafana.com/grafana/dashboards/14537 (import into grafana using id: `14537`)
-![](screenshots/grafana-queue-specific.png)
+- `bull-monitor` - this utility must be running (and the `/metrics` endpoint should be accessible)
+- `prometheus` - you need to be running prometheus and have it configured to scrape `bull-monitor`
+- `grafana` - grafana needs to be setup and configured to scrape data from prometheus
 
-Want to play around with all this stuff locally? You can spin everything needed by running:
+If you want to play around with a local setup of this:
 
 ```
-npm run services:start:all
-
-# OR spin up only dependent services, but run bull-monitor locally
+# start services
 npm run services:start
 npm run start:dev
+
+# generate/process dummy data
+npm run generate
 ```
 
-Once completed the following will be available:
+You can now go to: http://localhost:3001/dashboard/import and load dashboards:
 
-- Grafana UI: http://localhost:3001
-- Prometheus: http://localhost:3002
-- SMTP (Mailhog): http:localhost: http://localhost:3003 (username: `test`, password: `test`)
-- Redis: `localhost:6001`
-- SMTP Server (used by Grafana Alerts): `localhost:6002` (no auth required, no encryption)
-
-When you are done you can get rid of everything with:
-
-```
-npm run services:remove
-
-# OR if you want to stop without removing
-npm run services:stop
-```
+| Grafana Dashboard Name | Grafana ID                                            | Description                                      | Screenshot                                  |
+| ---------------------- | ----------------------------------------------------- | ------------------------------------------------ | ------------------------------------------- |
+| Queue Overview         | [14538](https://grafana.com/grafana/dashboards/14538) | High level overview of all monitored bull queues | ![](screenshots/grafana-all-queues.png)     |
+| Queue Specific         | [14537](https://grafana.com/grafana/dashboards/14537) | Queue specific details                           | ![](screenshots/grafana-queue-specific.png) |
 
 ## Available UIs
 
@@ -263,6 +213,33 @@ From: https://github.com/bee-queue/arena. To use this UI you'll need to set the 
 
 - This is intended as a back office monitoring solution. You should not make expose this publicly
 - This is currently intended to run as a single process and should not be scaled horizontally (future todo item)
+
+## Local Development
+
+You can spin up a full local development environment by running:
+
+```
+# start services
+npm run services:start
+npm run start:dev
+```
+
+The following services are available (and automatically configured) at these locations:
+
+- Grafana UI: http://localhost:3001
+- Prometheus: http://localhost:3002
+- SMTP (Mailhog): http:localhost: http://localhost:3003 (username: `test`, password: `test`)
+- Redis: `localhost:6001`
+- SMTP Server (used by Grafana Alerts): `localhost:6002` (no auth required, no encryption)
+
+When you are done you can get rid of everything with:
+
+```
+npm run services:remove
+
+# OR if you want to stop without removing
+npm run services:stop
+```
 
 ## Roadmap
 

@@ -16,5 +16,5 @@
       "@app/*": ["*"]
     }
   },
-  "include": ["src/**/*", "test/**/*", "test.ts"]
+  "include": ["src/**/*", "test/**/*", "bull_generator.ts"]
 }
