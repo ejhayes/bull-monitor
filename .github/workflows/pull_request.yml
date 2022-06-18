@@ -12,7 +12,7 @@ jobs:
   init:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - id: cache
         uses: actions/cache@v3
         with:
@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [init]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           token: ${{ secrets.GH_TOKEN }}
       - uses: actions/cache@v3
@@ -53,7 +53,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [init]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Prepare repository
         run: git fetch --unshallow --tags
       - uses: actions/cache@v3
@@ -87,7 +87,7 @@ jobs:
         ports:
           - 6001:6379
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: actions/cache@v3
         with:
           path: ./node_modules
