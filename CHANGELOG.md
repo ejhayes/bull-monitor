@@ -1,3 +1,25 @@
+# v2.0.2 (Sat Jun 18 2022)
+
+#### 🐛 Bug Fix
+
+- Bump actions/checkout from 2 to 3 [#14](https://github.com/ejhayes/bull-monitor/pull/14) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+
+#### 🔩 Dependency Updates
+
+- Bump actions/cache from 2 to 3 [#15](https://github.com/ejhayes/bull-monitor/pull/15) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Bump docker/login-action from 1 to 2 [#16](https://github.com/ejhayes/bull-monitor/pull/16) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Bump actions/setup-node from 1 to 3 [#18](https://github.com/ejhayes/bull-monitor/pull/18) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Bump @faker-js/faker from 6.3.1 to 7.2.0 [#20](https://github.com/ejhayes/bull-monitor/pull/20) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Bump @nestjs/testing from 8.4.5 to 8.4.7 [#19](https://github.com/ejhayes/bull-monitor/pull/19) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Bump wearerequired/lint-action from 1 to 2 [#25](https://github.com/ejhayes/bull-monitor/pull/25) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Bump paambaati/codeclimate-action from 2.7.5 to 3.0.0 [#17](https://github.com/ejhayes/bull-monitor/pull/17) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+
+#### Authors: 1
+
+- [@dependabot[bot]](https://github.com/dependabot[bot])
+
+---
+
 # v2.0.1 (Fri Jun 17 2022)
 
 #### 🐛 Bug Fix
