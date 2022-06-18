@@ -96,10 +96,13 @@ jobs:
         with:
           node-version: '16'
       - uses: mattallty/jest-github-action@v1
+        if: ${{ github.actor != 'dependabot[bot]' }}
         with:
           test-command: npm run test:ci
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - if: ${{ github.actor == 'dependabot[bot]' }}
+        run: npm run test:ci
       - name: unit tests
         uses: paambaati/codeclimate-action@v3.0.0
         env:
