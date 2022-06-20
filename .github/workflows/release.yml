@@ -14,7 +14,7 @@ jobs:
         with:
           token: ${{ secrets.GH_TOKEN }}
 
-      - uses: oleksiyrudenko/gha-git-credentials@v2-latest
+      - uses: oleksiyrudenko/gha-git-credentials@v2.1
         with:
           token: '${{ secrets.GH_TOKEN }}'
 
@@ -53,7 +53,7 @@ jobs:
           npx auto shipit
 
       - name: Docker Hub Description
-        uses: peter-evans/dockerhub-description@v2
+        uses: peter-evans/dockerhub-description@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
