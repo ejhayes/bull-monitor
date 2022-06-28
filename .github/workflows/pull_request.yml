@@ -101,7 +101,7 @@ jobs:
       #    test-command: npm run test:ci
       #  env:
       #    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - #if: ${{ github.actor == 'dependabot[bot]' }}
+      - #if: ${{ github.actor == 'dependabot[bot]' }} 
         run: npm run test:ci
       - run: npm run test:e2e
       - name: unit tests
