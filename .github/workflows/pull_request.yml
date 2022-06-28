@@ -22,7 +22,7 @@ jobs:
         with:
           node-version: '16'
       - if: steps.cache.outputs.cache-hit != 'true'
-        run: npm ci --ignore-scripts
+        run: npm ci
 
   lint:
     runs-on: ubuntu-latest
