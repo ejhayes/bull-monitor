@@ -103,6 +103,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - if: ${{ github.actor == 'dependabot[bot]' }}
         run: npm run test:ci
+      - run: npm run test:e2e
       - name: unit tests
         uses: paambaati/codeclimate-action@v3.0.0
         env:
