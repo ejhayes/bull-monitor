@@ -83,7 +83,7 @@
     "@typescript-eslint/eslint-plugin": "^5.23.0",
     "@typescript-eslint/parser": "^5.23.0",
     "auto": "^10.37.1",
-    "chalk": "^4.1.2",
+    "chalk": "^5.0.1",
     "dotenv-cli": "^5.1.0",
     "eslint": "^8.15.0",
     "eslint-config-prettier": "^8.5.0",
