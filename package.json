@@ -38,7 +38,7 @@
   },
   "dependencies": {
     "@bull-board/api": "^3.11.0",
-    "@bull-board/express": "^3.11.0",
+    "@bull-board/express": "^4.0.0",
     "@nestjs/common": "^8.4.5",
     "@nestjs/core": "^8.4.5",
     "@nestjs/event-emitter": "1.1.1",
@@ -54,7 +54,7 @@
     "bullmq": "^1.86.2",
     "envalid": "^7.3.1",
     "forever-monitor": "^3.0.3",
-    "nestjs-redis": "https://github.com/skunight/nestjs-redis#939f33a7f9b252e872c6edb76a3a860ed053bacf",
+    "nestjs-redis": "1.2.6",
     "prom-client": "^14.0.1",
     "reflect-metadata": "^0.1.13",
     "rimraf": "^3.0.2",
