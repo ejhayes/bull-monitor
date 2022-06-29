@@ -95,13 +95,13 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: '16'
-      #- uses: mattallty/jest-github-action@v1
-      #  if: ${{ github.actor != 'dependabot[bot]' }}
-      #  with:
-      #    test-command: npm run test:ci
-      #  env:
-      #    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - #if: ${{ github.actor == 'dependabot[bot]' }} 
+      - if: ${{ github.actor != 'dependabot[bot]' }}
+        uses: mattallty/jest-github-action@v1
+        with:
+          test-command: npm run test:ci
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - if: ${{ github.actor == 'dependabot[bot]' }}
         run: npm run test:ci
       - run: npm run test:e2e
       - name: unit tests
