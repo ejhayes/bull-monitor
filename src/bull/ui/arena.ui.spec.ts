@@ -8,7 +8,7 @@ jest.mock('bull-arena', () => {
 import { ConfigModule } from '@app/config/config.module';
 import { ConfigService } from '@app/config/config.service';
 import { LoggerModule, LoggerService } from '@app/logger';
-import { Test } from '@nestjs/testing';
+import { Test, TestingModule } from '@nestjs/testing';
 import Arena from 'bull-arena';
 import { Queue } from 'bullmq';
 import { BullArenaUi } from './arena.ui';
@@ -18,9 +18,10 @@ describe(BullArenaUi, () => {
   let loggerService: LoggerService;
   let arenaUi: BullArenaUi;
   let testQueue: Queue;
+  let moduleRef: TestingModule;
 
   beforeEach(async () => {
-    const moduleRef = await Test.createTestingModule({
+    moduleRef = await Test.createTestingModule({
       imports: [ConfigModule, LoggerModule.forRoot({})],
     }).compile();
 
@@ -37,6 +38,7 @@ describe(BullArenaUi, () => {
 
   afterEach(async () => {
     await testQueue.close();
+    await moduleRef.close();
   });
 
   it('initializes with correct params', async () => {

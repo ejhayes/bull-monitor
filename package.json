@@ -30,7 +30,7 @@
     "lint:fix": "npm run lint --fix",
     "precommit": "npm run lint && npm run build && npm run test && npm run test:e2e",
     "test:ci": "npm run test -- --coverage",
-    "test": "dotenv -e environments/test.env -e environments/local.env -- jest --forceExit --detectOpenHandles --runInBand",
+    "test": "dotenv -e environments/test.env -e environments/local.env -- jest",
     "test:watch": "dotenv -e environments/test.env -e environments/local.env -- jest --watch",
     "test:cov": "dotenv -e environments/test.env -e environments/local.env -- jest --coverage",
     "test:debug": "dotenv -e environments/test.env -e environments/local.env -- node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",

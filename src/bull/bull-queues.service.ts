@@ -113,6 +113,9 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
           this.logger.error(err.stack);
           this.removeQueue(queuePrefix, queueName);
         });
+        this._queues[queueKey].on('ioredis:close', () => {
+          this.removeQueue(queuePrefix, queueName);
+        });
         /**
          * From: https://docs.bullmq.io/guide/connections
          *
