@@ -20,7 +20,7 @@ jobs:
           key: modules-${{ hashFiles('package-lock.json') }}
       - uses: actions/setup-node@v3
         with:
-          node-version: '16'
+          node-version: '18'
       - if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
 
@@ -37,7 +37,7 @@ jobs:
           key: modules-${{ hashFiles('package-lock.json') }}
       - uses: actions/setup-node@v3
         with:
-          node-version: '16'
+          node-version: '18'
       - uses: wearerequired/lint-action@v2
         with:
           eslint: true
@@ -62,7 +62,7 @@ jobs:
           key: modules-${{ hashFiles('package-lock.json') }}
       - uses: actions/setup-node@v3
         with:
-          node-version: '16'
+          node-version: '18'
       - run: npm run ci:build
       - env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -94,7 +94,7 @@ jobs:
           key: modules-${{ hashFiles('package-lock.json') }}
       - uses: actions/setup-node@v3
         with:
-          node-version: '16'
+          node-version: '18'
       - if: ${{ github.actor != 'dependabot[bot]' }}
         uses: mattallty/jest-github-action@v1
         with:
