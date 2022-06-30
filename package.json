@@ -113,6 +113,14 @@
       "ts"
     ],
     "rootDir": ".",
+    "coveragePathIgnorePatterns": [
+      "interfaces",
+      "enums",
+      "<rootDir>/src/app.module.ts",
+      "<rootDir>/src/daemon.ts",
+      "<rootDir>/src/main.ts",
+      "<rootDir>/src/transform_logs.ts"
+    ],
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
