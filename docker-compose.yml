@@ -14,7 +14,7 @@ services:
     depends_on:
       - redis
     environment:
-      UI: arena
+      UI: bull-board
       REDIS_HOST: redis
       REDIS_PORT: 6379
       PORT: 3000
