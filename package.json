@@ -34,7 +34,8 @@
     "test:watch": "dotenv -e environments/test.env -e environments/local.env -- jest --watch",
     "test:cov": "dotenv -e environments/test.env -e environments/local.env -- jest --coverage",
     "test:debug": "dotenv -e environments/test.env -e environments/local.env -- node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "dotenv -e environments/test.env -e environments/local.env -- jest --rootDir . --testRegex '.e2e-spec.ts$' --detectOpenHandles --forceExit"
+    "test:e2e": "dotenv -e environments/test.env -e environments/local.env -- jest --rootDir . --testRegex '.e2e-spec.ts$' --detectOpenHandles --forceExit",
+    "transform_logs": "ts-node -r tsconfig-paths/register src/transform_logs.ts"
   },
   "dependencies": {
     "@bull-board/api": "^4.0.0",
@@ -52,6 +53,7 @@
     "bull-master": "^1.0.5",
     "bull-prom": "ejhayes/bull-prom#master",
     "bullmq": "^1.86.2",
+    "commander": "^9.3.0",
     "envalid": "^7.3.1",
     "forever-monitor": "^3.0.3",
     "nestjs-redis": "1.2.6",
