@@ -10,7 +10,7 @@ RUN go install -v github.com/oauth2-proxy/oauth2-proxy/v7@latest
 
 FROM node:18-alpine
 # https://stackoverflow.com/questions/66963068/docker-alpine-executable-binary-not-found-even-if-in-path
-RUN apk add --no-cache libc6-compat
+RUN apk add --no-cache libc6-compat curl
 ARG BUILD_VERSION
 ARG LOG_LEVEL=info
 ARG LOG_LABEL=bull-monitor
@@ -29,4 +29,5 @@ ENV NODE_ENV="production" \
     OAUTH2_PROXY_SKIP_AUTH_ROUTES=$OAUTH2_PROXY_SKIP_AUTH_ROUTES \
     VERSION=$BUILD_VERSION
 EXPOSE 3000
+HEALTHCHECK --interval=15s --timeout=30s --start-period=5s --retries=3 CMD curl --fail http://localhost:3000/health || exit 1
 ENTRYPOINT ["sh", "docker-entrypoint.sh"]
