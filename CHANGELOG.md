@@ -1,3 +1,23 @@
+# v2.1.0 (Thu Jun 30 2022)
+
+#### 🚀 Enhancement
+
+- OAuth2 Proxy Support [#42](https://github.com/ejhayes/bull-monitor/pull/42) ([@ejhayes](https://github.com/ejhayes))
+
+#### 🔩 Dependency Updates
+
+- Bump eslint-plugin-prettier from 4.1.0 to 4.2.1 [#43](https://github.com/ejhayes/bull-monitor/pull/43) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Bump oleksiyrudenko/gha-git-credentials from 2.pre.latest to 2.1 [#32](https://github.com/ejhayes/bull-monitor/pull/32) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Bump peter-evans/dockerhub-description from 2 to 3 [#31](https://github.com/ejhayes/bull-monitor/pull/31) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Bump ioredis from 5.0.5 to 5.0.6 [#30](https://github.com/ejhayes/bull-monitor/pull/30) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+
+#### Authors: 2
+
+- [@dependabot[bot]](https://github.com/dependabot[bot])
+- Eric Hayes ([@ejhayes](https://github.com/ejhayes))
+
+---
+
 # v2.0.2 (Sat Jun 18 2022)
 
 #### 🐛 Bug Fix
