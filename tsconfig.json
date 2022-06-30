@@ -13,7 +13,7 @@
     "incremental": true,
     "esModuleInterop": true,
     "paths": {
-      "@app/*": ["*"]
+      "@app/*": ["*", "src/*"]
     }
   },
   "include": ["src/**/*", "test/**/*", "bull_generator.ts"]

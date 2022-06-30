@@ -14,6 +14,7 @@ This is an all-in-one tool to help you visualize and report on bull! It runs as 
 - Configurable UI support to visualize bull queues (supported: [`arena`](https://github.com/bee-queue/arena#readme), [`bull-board`](https://github.com/felixmosh/bull-board), [`bull-master`](https://github.com/hans-lizihan/bull-master))
 - Sentry error reporting (just pass `SENTRY_DSN` environment variable)
 - [Elastic ECS](https://www.elastic.co/what-is/ecs) logging when `NODE_ENV` is set to `production`
+- Bundled `oauth2_proxy` if you want to restrict access (disabled by default)
 
 You can test it out with docker by running (if you want to access something running on your host machine and not within the docker network you can use the special hostname [`host.docker.internal`](https://docs.docker.com/docker-for-mac/networking/#use-cases-and-workarounds)):
 
@@ -61,6 +62,7 @@ The following environment variables are supported:
 
 | Environment Variable                     | Required | Default Value  | Description                                                                                                                                                              |
 | ---------------------------------------- | -------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `ALTERNATE_PORT`                         |          | `8081`         | If oauth2 proxy is enabled bull monitor will run on this port instead                                                                                                    |
 | `REDIS_HOST`                             | x        | `null`         | Redis host (**IMPORTANT** must be same redis instance that stores bull jobs!)                                                                                            |
 | `REDIS_PORT`                             | x        | `null`         | Redis port                                                                                                                                                               |
 | `REDIS_PASSWORD`                         |          | `null`         | Redis password                                                                                                                                                           |
@@ -73,8 +75,10 @@ The following environment variables are supported:
 | `LOG_LABEL`                              |          | `bull-monitor` | Log label to use                                                                                                                                                         |
 | `LOG_LEVEL`                              |          | `info`         | Log level to use (supported: `debug`, `error`, `info`, `warn`)                                                                                                           |
 | `NODE_ENV`                               |          | `production`   | Node environment (use `development` for colorized logging)                                                                                                               |
+| `OAUTH2_PROXY_*`                         |          | `null`         | See [OAuth2 Proxy docs](https://oauth2-proxy.github.io/oauth2-proxy/docs/configuration/overview/#environment-variables) for more details                                 |
 | `PORT`                                   |          | `3000`         | Port to use                                                                                                                                                              |
 | `SENTRY_DSN`                             |          | `null`         | Sentry DSN to send errors to (disabled if not provided)                                                                                                                  |
+| `USE_OAUTH2_PROXY`                       |          | `0`            | Enable oauth2 proxy (anything other than `1` will disable)                                                                                                               |
 
 ## getting started
 
@@ -191,23 +195,34 @@ You can now go to: http://localhost:3001/dashboard/import and load dashboards:
 
 There are 3 options currently available for UIs: `bull-board`, `arena`, and `bull-master`.
 
-## bull-board
+### bull-board
 
 From: https://github.com/felixmosh/bull-board#readme. This is the default UI. If you want to be explicit just set `UI` environment variable to `bull-board`.
 
 ![](screenshots/bull-board-ui.png)
 
-## bull-master
+### bull-master
 
 From: https://github.com/hans-lizihan/bull-master. To use this UI you'll need to set the `UI` environment variable to `bull-master`.
 
 ![](screenshots/bull-master-ui.png)
 
-## bull-arena
+### bull-arena
 
 From: https://github.com/bee-queue/arena. To use this UI you'll need to set the `UI` environment variable to `arena`.
 
 ![](screenshots/arena-ui.png)
+
+## OAuth2 Proxy
+
+You can restrict access to bull monitor using the built in OAuth2 proxy. To enable you'll need the following environment variables at a minimum:
+
+- `USE_OAUTH2_PROXY` (must be set to `1`)
+- `OAUTH2_PROXY_REDIRECT_URL` (this is what the oauth provider will be redirecting to)
+- `OAUTH2_PROXY_CLIENT_ID`
+- `OAUTH2_PROXY_SECRET_ID`
+
+Many other configuration options are possible. See the [OAuth2 Proxy documentation](https://oauth2-proxy.github.io/oauth2-proxy/docs/configuration/overview/#environment-variables) for more information.
 
 ## Security Considerations
 
