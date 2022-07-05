@@ -83,7 +83,7 @@
     "@types/node": "^18.0.0",
     "@types/supertest": "^2.0.12",
     "@typescript-eslint/eslint-plugin": "^5.30.4",
-    "@typescript-eslint/parser": "^5.30.4",
+    "@typescript-eslint/parser": "^5.30.5",
     "auto": "^10.37.1",
     "chalk": "^4.1.2",
     "dotenv-cli": "^6.0.0",
