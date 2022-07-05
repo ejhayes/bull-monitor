@@ -1,3 +1,29 @@
+# v2.1.1 (Tue Jul 05 2022)
+
+#### 🐛 Bug Fix
+
+- Update @sentry/node and @sentry/tracing to latest versions [#58](https://github.com/ejhayes/bull-monitor/pull/58) ([@ejhayes](https://github.com/ejhayes))
+- Bump @types/jest from 28.1.3 to 28.1.4 [#45](https://github.com/ejhayes/bull-monitor/pull/45) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Bump winston from 3.8.0 to 3.8.1 [#44](https://github.com/ejhayes/bull-monitor/pull/44) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+
+#### 🔩 Dependency Updates
+
+- Bump @typescript-eslint/eslint-plugin from 5.30.4 to 5.30.5 [#56](https://github.com/ejhayes/bull-monitor/pull/56) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Bump @typescript-eslint/parser from 5.30.4 to 5.30.5 [#57](https://github.com/ejhayes/bull-monitor/pull/57) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Bump ts-node from 10.8.1 to 10.8.2 [#55](https://github.com/ejhayes/bull-monitor/pull/55) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Bump supertest from 6.2.3 to 6.2.4 [#53](https://github.com/ejhayes/bull-monitor/pull/53) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Bump dotenv-cli from 5.1.0 to 6.0.0 [#54](https://github.com/ejhayes/bull-monitor/pull/54) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Bump @typescript-eslint/eslint-plugin from 5.30.0 to 5.30.4 [#50](https://github.com/ejhayes/bull-monitor/pull/50) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Bump @typescript-eslint/parser from 5.30.0 to 5.30.4 [#49](https://github.com/ejhayes/bull-monitor/pull/49) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Bump eslint from 8.18.0 to 8.19.0 [#48](https://github.com/ejhayes/bull-monitor/pull/48) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+
+#### Authors: 2
+
+- [@dependabot[bot]](https://github.com/dependabot[bot])
+- Eric Hayes ([@ejhayes](https://github.com/ejhayes))
+
+---
+
 # v2.1.0 (Thu Jun 30 2022)
 
 #### 🚀 Enhancement
