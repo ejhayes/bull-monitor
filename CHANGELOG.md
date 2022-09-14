@@ -1,3 +1,19 @@
+# v2.1.2 (Wed Sep 14 2022)
+
+#### 🐛 Bug Fix
+
+- chore: update dependencies [#92](https://github.com/ejhayes/bull-monitor/pull/92) ([@ejhayes](https://github.com/ejhayes))
+
+#### ⚠️ Pushed to `main`
+
+- disabled latest tag [skip-release] ([@ejhayes](https://github.com/ejhayes))
+
+#### Authors: 1
+
+- Eric Hayes ([@ejhayes](https://github.com/ejhayes))
+
+---
+
 # v2.1.1 (Tue Jul 05 2022)
 
 #### 🐛 Bug Fix
