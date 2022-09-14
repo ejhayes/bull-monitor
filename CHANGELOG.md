@@ -1,3 +1,15 @@
+# v2.2.0 (Wed Sep 14 2022)
+
+#### 🚀 Enhancement
+
+- feat: add support for REDIS_DB environment variable [#94](https://github.com/ejhayes/bull-monitor/pull/94) ([@ejhayes](https://github.com/ejhayes))
+
+#### Authors: 1
+
+- Eric Hayes ([@ejhayes](https://github.com/ejhayes))
+
+---
+
 # v2.1.2 (Wed Sep 14 2022)
 
 #### 🐛 Bug Fix
