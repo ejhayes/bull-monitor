@@ -2,11 +2,12 @@ import { ConfigService } from '@app/config/config.service';
 import { InjectLogger, LoggerService } from '@app/logger';
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { Mutex, withTimeout } from 'async-mutex';
-import { Queue, QueueScheduler } from 'bullmq';
+import { Queue, Queue3, QueueScheduler } from 'bullmq';
 import { RedisService } from 'nestjs-redis';
 import { TypedEmitter } from 'tiny-typed-emitter2';
 import {
   EVENT_TYPES,
+  QUEUE_TYPES,
   REDIS_CLIENTS,
   REDIS_EVENT_TYPES,
   REDIS_KEYSPACE_EVENT_TYPES,
@@ -56,21 +57,25 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
     queuePrefix: string,
     queueName: string,
   ) {
-    return await this._redisMutex.runExclusive(async () => {
-      this.logger.debug(
-        `processMessage(${eventType}): ${queuePrefix}::${queueName}`,
-      );
-      switch (eventType) {
-        case REDIS_KEYSPACE_EVENT_TYPES.HSET:
-          await this.addQueue(queuePrefix, queueName);
-          break;
-        case REDIS_KEYSPACE_EVENT_TYPES.DELETE:
-          await this.removeQueue(queuePrefix, queueName);
-          break;
-        default:
-          this.logger.debug(`Ignoring event '${eventType}'`);
-      }
-    });
+    this.logger.debug(
+      `processMessage(${eventType}): ${queuePrefix}::${queueName}`,
+    );
+    switch (eventType) {
+      case REDIS_KEYSPACE_EVENT_TYPES.HSET:
+        await this.addQueue(queuePrefix, queueName, QUEUE_TYPES.BULLMQ);
+        break;
+      case REDIS_KEYSPACE_EVENT_TYPES.DELETE:
+        await this.removeQueue(queuePrefix, queueName);
+        break;
+      /**
+       * @url https://github.com/OptimalBits/bull/blob/edfbd163991c212dd6548875c22f2745f897ae28/lib/commands/addJob-6.lua#L92
+       */
+      case REDIS_KEYSPACE_EVENT_TYPES.RPUSH:
+        // TODO: implement check to see if we need to add something or if it can be ignored
+        break;
+      default:
+        this.logger.debug(`Ignoring event '${eventType}'`);
+    }
   }
 
   getLoadedQueues(): string[] {
@@ -91,7 +96,11 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
     };
   }
 
-  private addQueue(queuePrefix: string, queueName: string) {
+  private addQueue(
+    queuePrefix: string,
+    queueName: string,
+    queueType: QUEUE_TYPES,
+  ) {
     return this._bullMutex.runExclusive(async () => {
       const queueKey = this.generateQueueKey(queuePrefix, queueName);
       this.logger.debug(`Attempting to add queue: ${queueKey}`);
@@ -184,19 +193,35 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
         (item) => item.trim(),
       );
 
-    // loop through each queue prefix and add anything
-    // we find
+    /**
+     * @url https://redis.io/docs/manual/keyspace-notifications/
+     * loop through each key prefix and add anything we find
+     */
     for (const queuePrefix of queuePrefixes) {
       // subscribe to keyspace events
       await subscriber.psubscribe(
-        `__keyspace@0__:${queuePrefix}:*:meta`,
+        `__keyspace@${this.configService.config.REDIS_DATABASE}__:${queuePrefix}:*:meta`,
         (err, count) => {
           if (err) {
             this.logger.error(err.stack);
+          } else {
+            this.logger.log(
+              `[${QUEUE_TYPES.BULLMQ}, ${QUEUE_TYPES.BULLMQ_PRO}] Subscribed to ${count} keyspace event(s) for '${queuePrefix}'`,
+            );
           }
-          this.logger.log(
-            `Subscribed to ${count} keyspace event(s) for '${queuePrefix}'`,
-          );
+        },
+      );
+
+      await subscriber.psubscribe(
+        `__keyspace@${this.configService.config.REDIS_DATABASE}__:${queuePrefix}:*:wait`,
+        (err, count) => {
+          if (err) {
+            this.logger.error(err.stack);
+          } else {
+            this.logger.log(
+              `[${QUEUE_TYPES.BULL3}] Subscribed to ${count} keyspace event(s) for '${queuePrefix}'`,
+            );
+          }
         },
       );
     }
@@ -240,26 +265,65 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
     this._initialized = false;
   }
 
-  private async findAndPopulateQueues(match: string): Promise<string[]> {
+  /**
+   * The following logic is used to determine the type of bull queue encountered:
+   * - QUEUE_PREFIX:*:meta
+   *   - If version key exists and is set to bullmq-pro, this is a bullmq pro queue
+   *   - This is a regular bullmq queue
+   * - QUEUE_PREFIX:*:wait
+   *   - If queue has not been detected already, this is a bull queue
+   */
+  private async findAndPopulateQueues(
+    type: 'hash' | 'list',
+    match: string,
+    processFn: (
+      discoveredName: string,
+      queuePrefix: string,
+      queueName: string,
+    ) => Promise<QUEUE_TYPES | void>,
+  ): Promise<string[]> {
     const client = await this.redisService.getClient(REDIS_CLIENTS.PUBLISH);
-    const loadedQueues = new Set([]);
+    const discoveredQueues = new Set([]);
+    let done = false;
     return new Promise((resolve, reject) => {
       client
-        .scanStream({ type: 'hash', match, count: 100 })
-        .on('data', (keys: string[]) => {
+        .scanStream({
+          type,
+          match,
+          count: 100,
+        })
+        .on('data', async (keys: string[]) => {
           for (const key of keys) {
             const queueMatch = parseBullQueue(key);
-            loadedQueues.add(
-              this.generateQueueKey(
+            const discoveredQueue = this.generateQueueKey(
+              queueMatch.queuePrefix,
+              queueMatch.queueName,
+            );
+            const addQueueType = await processFn(
+              discoveredQueue,
+              queueMatch.queuePrefix,
+              queueMatch.queueName,
+            );
+
+            if (addQueueType) {
+              this.logger.log(
+                `[${addQueueType}] attempting to add queue '${discoveredQueue}'`,
+              );
+              discoveredQueues.add(discoveredQueue);
+              await this.addQueue(
                 queueMatch.queuePrefix,
                 queueMatch.queueName,
-              ),
-            );
-            this.addQueue(queueMatch.queuePrefix, queueMatch.queueName);
+                addQueueType,
+              );
+            }
+          }
+
+          if (done) {
+            resolve(Array.from(discoveredQueues));
           }
         })
         .on('end', () => {
-          resolve(Array.from(loadedQueues));
+          done = true;
         })
         .on('error', (err) => {
           this.logger.error(`${err.name}: ${err.message}`);
@@ -372,13 +436,48 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
       for (const queuePrefix of queuePrefixes) {
         this.logger.log(`Loading queues from queuePrefix: '${queuePrefix}'`);
 
+        /*
         newlyLoadedQueues = (
           await Promise.all([
-            // this.findAndPopulateQueues(`${queuePrefix}:*:stalled-check`),
-            //this.findAndPopulateQueues(`${queuePrefix}:*:id`),
-            this.findAndPopulateQueues(`${queuePrefix}:*:meta`),
+            this.findAndPopulateQueues(`${queuePrefix}:*:meta`, (discoveredName, queuePrefix, queueName) => {
+            }),
           ])
         ).flat();
+        */
+
+        newlyLoadedQueues = await this.findAndPopulateQueues(
+          'hash',
+          `${queuePrefix}:*:meta`,
+          async (discoveredName, queuePrefix, queueName) => {
+            const client = await this.redisService.getClient(
+              REDIS_CLIENTS.PUBLISH,
+            );
+            const version = await client.hget(
+              `${queuePrefix}:${queueName}:meta`,
+              'version',
+            );
+
+            if (version === 'bullmq-pro') {
+              return QUEUE_TYPES.BULLMQ_PRO;
+            }
+
+            return QUEUE_TYPES.BULLMQ;
+          },
+        ).then(async (loadedQueues) => {
+          this.logger.debug('looking for bull3 queues');
+          const bull3Queues = await this.findAndPopulateQueues(
+            'list',
+            `${queuePrefix}:*:wait`,
+            async (discoveredName, queuePrefix, queueName) => {
+              if (loadedQueues.includes(discoveredName)) {
+                return;
+              }
+              return QUEUE_TYPES.BULL3;
+            },
+          );
+
+          return [loadedQueues, bull3Queues].flat();
+        });
       }
 
       /**

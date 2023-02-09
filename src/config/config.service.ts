@@ -24,6 +24,10 @@ export class ConfigService {
      */
     REDIS_CONFIGURE_KEYSPACE_NOTIFICATIONS: bool({ default: true }),
     /**
+     * Redis database id to use (defaults to DB 0)
+     */
+    REDIS_DATABASE: num({ default: 0 }),
+    /**
      * Redis host to fetch queues from
      */
     REDIS_HOST: str(),
