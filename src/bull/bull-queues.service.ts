@@ -376,7 +376,8 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
           await Promise.all([
             // this.findAndPopulateQueues(`${queuePrefix}:*:stalled-check`),
             //this.findAndPopulateQueues(`${queuePrefix}:*:id`),
-            this.findAndPopulateQueues(`${queuePrefix}:*:meta`),
+            //this.findAndPopulateQueues(`${queuePrefix}:*:meta`),
+            this.findAndPopulateQueues(`${queuePrefix}:*:*`),
           ])
         ).flat();
       }
