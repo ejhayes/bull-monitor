@@ -2,7 +2,7 @@ import { ConfigService } from '@app/config/config.service';
 import { InjectLogger, LoggerService } from '@app/logger';
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { Mutex, withTimeout } from 'async-mutex';
-import { Queue, QueueScheduler } from 'bullmq';
+import { Queue } from 'bullmq';
 import { RedisService } from 'nestjs-redis';
 import { TypedEmitter } from 'tiny-typed-emitter2';
 import {
@@ -39,7 +39,6 @@ const REDIS_CONFIG_NOTIFY_KEYSPACE_EVENTS_FLAGS = 'A$K';
 export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
   private _initialized = false;
   private readonly _queues: { [queueName: string]: Queue } = {};
-  private readonly _schedulers: { [queueName: string]: QueueScheduler } = {};
   private readonly _redisMutex = withTimeout(new Mutex(), 10000);
   private readonly _bullMutex = withTimeout(new Mutex(), 10000);
 
@@ -117,30 +116,6 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
         this._queues[queueKey].on('ioredis:close', () => {
           this.removeQueue(queuePrefix, queueName);
         });
-        /**
-         * From: https://docs.bullmq.io/guide/connections
-         *
-         * Every class will consume at least one Redis connection, but it
-         * is also possible to reuse connections in some situations. For example,
-         * the Queue and Worker classes can accept an existing ioredis instance, and
-         * by that reusing that connection, however QueueScheduler and QueueEvents
-         * cannot do that because they require blocking connections to Redis, which
-         * makes it impossible to reuse them.
-         */
-        this._schedulers[queueKey] = new QueueScheduler(queueName, {
-          prefix: queuePrefix,
-          connection: {
-            host: this.configService.config.REDIS_HOST,
-            port: this.configService.config.REDIS_PORT,
-            password: this.configService.config.REDIS_PASSWORD,
-            family: this.configService.config.REDIS_FAMILY,
-          },
-        });
-        this._schedulers[queueKey].on('error', (err) => {
-          Error.captureStackTrace(err);
-          this.logger.error(err.stack);
-          this.removeQueue(queuePrefix, queueName);
-        });
         this.eventEmitter.emit(
           EVENT_TYPES.QUEUE_CREATED,
           new QueueCreatedEvent(queuePrefix, this._queues[queueKey]),
@@ -158,14 +133,12 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
 
         try {
           await this._queues[queueKey].close();
-          await this._schedulers[queueKey].close();
         } catch (err) {
           // in the event of an error just ignore it and move on
           this.logger.error(err);
         }
 
         delete this._queues[queueKey];
-        delete this._schedulers[queueKey];
 
         this.eventEmitter.emit(
           EVENT_TYPES.QUEUE_REMOVED,
@@ -470,10 +443,7 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
     this.eventEmitter.removeAllListeners();
 
     // close all connections
-    for (const queue of [
-      Object.values(this._queues),
-      Object.values(this._schedulers),
-    ].flat()) {
+    for (const queue of [Object.values(this._queues)].flat()) {
       this.logger.warn(`Closing queue: ${queue.name}`);
       await new Promise<void>(async (resolve) => {
         (await queue.client).on('close', () => {
