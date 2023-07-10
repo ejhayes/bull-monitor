@@ -40,6 +40,10 @@ export class ConfigService {
      */
     REDIS_PASSWORD: str({ default: '' }),
     /**
+     * Redis family (if needed)
+     */
+    REDIS_FAMILY: num<number | undefined>({ default: undefined }),
+    /**
      * Comma separate list of bull queue prefixes to
      * monitor (default: bull)
      */

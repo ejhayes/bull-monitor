@@ -35,6 +35,7 @@ const config = cleanEnv(process.env, {
   REDIS_PASSWORD: str({ default: '' }),
   REDIS_PORT: port({ default: 6001 }),
   CREATE_DELAY_MS: num({ default: 0 }),
+  REDIS_FAMILY: num<number | undefined>({ default: undefined }),
   CONCURRENCY: num({ default: 1 }),
 });
 
@@ -50,6 +51,7 @@ const main = async () => {
       host: config.REDIS_HOST,
       port: config.REDIS_PORT,
       password: config.REDIS_PASSWORD,
+      family: config.REDIS_FAMILY,
     },
   });
 
@@ -59,6 +61,7 @@ const main = async () => {
       host: config.REDIS_HOST,
       port: config.REDIS_PORT,
       password: config.REDIS_PASSWORD,
+      family: config.REDIS_FAMILY,
     },
   });
 
@@ -92,6 +95,7 @@ const main = async () => {
           host: config.REDIS_HOST,
           port: config.REDIS_PORT,
           password: config.REDIS_PASSWORD,
+          family: config.REDIS_FAMILY,
         },
         limiter: {
           duration: config.LIMITER_DURATION_MS,
