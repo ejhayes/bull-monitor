@@ -1,7 +1,7 @@
 name: Code Review
 
 on:
-  pull_request_target:
+  pull_request:
     types: [opened, synchronize]
 
 concurrency:
@@ -30,7 +30,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          token: ${{ secrets.GH_TOKEN }}
+          token: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
       - uses: actions/cache@v3
         with:
           path: ./node_modules
@@ -44,7 +44,7 @@ jobs:
           eslint_extensions: ts
           prettier: true
           prettier_extensions: ts,json,js,yml
-          auto_fix: true
+          auto_fix: ${{ secrets.GH_TOKEN && true || false }}
           commit_message: 'chore(lint): Fix code style issues with ${linter}'
           github_token: ${{ secrets.GITHUB_TOKEN }}
           git_email: 'lint-action@github.com'
