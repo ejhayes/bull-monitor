@@ -50,8 +50,9 @@ jobs:
           platforms: linux/amd64,linux/arm64
           context: .
           push: false
+          load: true
           tags: bull-monitor:latest
-          outputs: type=image,name=bull-monitor,push=false
+          # outputs: type=image,name=bull-monitor,push=false
 
       - run: docker images
 
