@@ -40,6 +40,8 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - run: npm ci
+
       - run: npm run build
 
       - name: Build multi-arch image
