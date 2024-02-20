@@ -13,14 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          token: ${{ secrets.GH_TOKEN }}
-
-      - uses: oleksiyrudenko/gha-git-credentials@v2.1
-        with:
-          token: '${{ secrets.GH_TOKEN }}'
-
-      - name: Prepare repository
-        run: git fetch --unshallow --tags
+          fetch-tags: true
 
       - uses: actions/setup-node@v3
         with:
