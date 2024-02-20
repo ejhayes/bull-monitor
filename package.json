@@ -11,8 +11,6 @@
   "scripts": {
     "prebuild": "rimraf dist",
     "build": "nest build",
-    "ci:build": "npm run build && docker-compose build bull-monitor",
-    "ci:publish": "npm run ci:build && docker-compose push bull-monitor",
     "format": "prettier --write .",
     "generate": "ACTION=createprocess MAX_JOB_DELAY_MS=200 LIMITER_MAX=200 CREATE_DELAY_MS=50 CONCURRENCY=15 ts-node bull_generator.ts",
     "generate:create": "ACTION=create CREATE_DELAY_MS=50 ts-node bull_generator.ts",

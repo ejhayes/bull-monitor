@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - arm-support
 
 jobs:
   release:
@@ -50,6 +51,9 @@ jobs:
           context: .
           push: false
           tags: bull-monitor:latest
+          outputs: type=image,push=false
+
+      - run: npm run services:start:all
 
       # - name: Create Release
       #   env:
