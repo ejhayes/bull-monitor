@@ -53,7 +53,7 @@ jobs:
           tags: bull-monitor:latest
           outputs: type=image,push=false
 
-      - run: npm run services:start:all
+      - run: npm run ci:test
 
       # - name: Create Release
       #   env:
