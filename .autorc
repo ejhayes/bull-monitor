@@ -4,7 +4,6 @@
     "email": "eric@deployfx.com"
   },
   "plugins": [
-    ["docker", { "registry": "ejhayes/nodejs-bull-monitor", "tagLatest": false}],
     ["released", { "includeBotPrs": true }],
     ["first-time-contributor"],
     ["all-contributors", {
