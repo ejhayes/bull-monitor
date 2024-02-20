@@ -44,6 +44,8 @@ jobs:
 
       - run: npm run build
 
+      - run: ls
+
       - name: Build multi-arch image
         uses: docker/build-push-action@v5
         with:
