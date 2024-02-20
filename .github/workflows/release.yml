@@ -48,28 +48,19 @@ jobs:
         with:
           platforms: linux/amd64,linux/arm64
           context: .
-          push: false
-          load: true
-          tags: bull-monitor:latest
-          # outputs: type=image,name=bull-monitor,push=false
+          push: true
+          tags: ejhayes/nodejs-bull-monitor:latest
 
-      - run: docker images
+      - name: Create Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          npx auto shipit
 
-      - run: docker image inspect bull-monitor:latest
-
-      - run: npm run ci:test
-
-      # - name: Create Release
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #     IMAGE: 'bull-monitor:latest'
-      #   run: |
-      #     npx auto shipit
-
-      # - name: Docker Hub Description
-      #   uses: peter-evans/dockerhub-description@v3
-      #   with:
-      #     username: ${{ secrets.DOCKERHUB_USERNAME }}
-      #     password: ${{ secrets.DOCKERHUB_PASSWORD }}
-      #     repository: ejhayes/nodejs-bull-monitor
-      #     short-description: 'All in one bull monitoring and reporting utility'
+      - name: Docker Hub Description
+        uses: peter-evans/dockerhub-description@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          repository: ejhayes/nodejs-bull-monitor
+          short-description: 'All in one bull monitoring and reporting utility'
