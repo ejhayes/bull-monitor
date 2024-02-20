@@ -53,6 +53,8 @@ jobs:
           tags: bull-monitor:latest
           outputs: type=image,push=false
 
+      - run: docker image inspect bull-monitor:latest
+
       - run: npm run ci:test
 
       # - name: Create Release
