@@ -51,7 +51,9 @@ jobs:
           context: .
           push: false
           tags: bull-monitor:latest
-          outputs: type=image,push=false
+          outputs: type=image,name=bull-monitor,push=false
+
+      - run: docker images
 
       - run: docker image inspect bull-monitor:latest
 
