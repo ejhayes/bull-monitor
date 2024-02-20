@@ -5,8 +5,13 @@ COPY package* ./
 RUN npm install --omit=dev
 COPY dist ./
 
-FROM golang:latest as go
-RUN go install -v github.com/oauth2-proxy/oauth2-proxy/v7@latest
+FROM alpine:latest as alpine
+ARG TARGETPLATFORM
+ENV PROXY_VERSION=v7.6.0
+ENV TARGETPLATFORM=$TARGETPLATFORM
+RUN curl -L https://github.com/oauth2-proxy/oauth2-proxy/releases/download/${PROXY_VERSION}/oauth2-proxy-${PROXY_VERSION}.$(echo ${TARGETPLATFORM//\//\-} ).tar.gz --output oauth2-proxy.tar.gz
+RUN tar -xvzf oauth2-proxy.tar.gz
+RUN mv oauth2-proxy-${PROXY_VERSION}.$(echo ${TARGETPLATFORM//\//\-} ) /bin/oauth2-proxy
 
 FROM node:18-alpine
 # https://stackoverflow.com/questions/66963068/docker-alpine-executable-binary-not-found-even-if-in-path
@@ -18,7 +23,7 @@ ARG ALTERNATE_PORT=8081
 ARG PORT=3000
 ARG OAUTH2_PROXY_SKIP_AUTH_ROUTES='/metrics,/health,/docs'
 WORKDIR /app
-COPY --from=go /go/bin/oauth2-proxy ./
+COPY --from=alpine /bin/oauth2-proxy ./
 COPY --from=build /app ./
 COPY docker-entrypoint.sh .
 ENV NODE_ENV="production" \
