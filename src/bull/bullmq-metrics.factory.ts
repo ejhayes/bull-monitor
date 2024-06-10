@@ -204,7 +204,7 @@ export class BullMQMetricsFactory {
     queueEvents.on('stalled', async (event) => {
       const job = await queue.getJob(event.jobId);
       const jobLabels = {
-        [LABEL_NAMES.JOB_NAME]: job.name,
+        [LABEL_NAMES.JOB_NAME]: job?.name,
         ...labels,
       };
       this.jobs_stalled.inc(jobLabels, 1);
@@ -212,7 +212,7 @@ export class BullMQMetricsFactory {
     queueEvents.on('active', async (event) => {
       const job = await queue.getJob(event.jobId);
       const jobLabels = {
-        [LABEL_NAMES.JOB_NAME]: job.name,
+        [LABEL_NAMES.JOB_NAME]: job?.name,
         ...labels,
       };
       this.jobs_active.inc(jobLabels, 1);
@@ -220,7 +220,7 @@ export class BullMQMetricsFactory {
     queueEvents.on('waiting', async (event) => {
       const job = await queue.getJob(event.jobId);
       const jobLabels = {
-        [LABEL_NAMES.JOB_NAME]: job.name,
+        [LABEL_NAMES.JOB_NAME]: job?.name,
         ...labels,
       };
       this.jobs_waiting.inc(jobLabels, 1);
@@ -231,7 +231,7 @@ export class BullMQMetricsFactory {
         /^(?<errorType>[^:]+):/,
       )?.groups?.errorType;
       const jobLabels = {
-        [LABEL_NAMES.JOB_NAME]: job.name,
+        [LABEL_NAMES.JOB_NAME]: job?.name,
         [LABEL_NAMES.ERROR_TYPE]: errorType,
         ...labels,
       };
@@ -241,7 +241,7 @@ export class BullMQMetricsFactory {
     queueEvents.on('delayed', async (event) => {
       const job = await queue.getJob(event.jobId);
       const jobLabels = {
-        [LABEL_NAMES.JOB_NAME]: job.name,
+        [LABEL_NAMES.JOB_NAME]: job?.name,
         ...labels,
       };
       this.jobs_delayed.inc(jobLabels, 1);
@@ -249,7 +249,7 @@ export class BullMQMetricsFactory {
     queueEvents.on('completed', async (event) => {
       const job = await queue.getJob(event.jobId);
       const jobLabels = {
-        [LABEL_NAMES.JOB_NAME]: job.name,
+        [LABEL_NAMES.JOB_NAME]: job?.name,
         ...labels,
       };
       this.jobs_completed.inc(jobLabels, 1);
