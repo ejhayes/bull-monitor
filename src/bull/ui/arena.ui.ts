@@ -35,7 +35,7 @@ export class BullArenaUi implements IBullUi {
   ) {
     this._ui = Arena(
       {
-        BullMQ: Queue,
+        BullMQ: require('bullmq'),
         queues: [
           {
             hostId: '',
