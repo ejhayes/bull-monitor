@@ -75,7 +75,7 @@ The following environment variables are supported:
 | `LOG_LABEL`                              |          | `bull-monitor` | Log label to use                                                                                                                                                         |
 | `LOG_LEVEL`                              |          | `info`         | Log level to use (supported: `debug`, `error`, `info`, `warn`)                                                                                                           |
 | `NODE_ENV`                               |          | `production`   | Node environment (use `development` for colorized logging)                                                                                                               |
-| `OAUTH2_PROXY_*`                         |          | `null`         | See [OAuth2 Proxy docs](https://oauth2-proxy.github.io/oauth2-proxy/docs/configuration/overview/#environment-variables) for more details                                 |
+| `OAUTH2_PROXY_*`                         |          | `null`         | See [OAuth2 Proxy docs](https://oauth2-proxy.github.io/oauth2-proxy/configuration/overview/#environment-variables) for more details                                 |
 | `PORT`                                   |          | `3000`         | Port to use                                                                                                                                                              |
 | `SENTRY_DSN`                             |          | `null`         | Sentry DSN to send errors to (disabled if not provided)                                                                                                                  |
 | `USE_OAUTH2_PROXY`                       |          | `0`            | Enable oauth2 proxy (anything other than `1` will disable)                                                                                                               |
@@ -222,7 +222,7 @@ You can restrict access to bull monitor using the built in OAuth2 proxy. To enab
 - `OAUTH2_PROXY_CLIENT_ID`
 - `OAUTH2_PROXY_SECRET_ID`
 
-Many other configuration options are possible. See the [OAuth2 Proxy documentation](https://oauth2-proxy.github.io/oauth2-proxy/docs/configuration/overview/#environment-variables) for more information.
+Many other configuration options are possible. See the [OAuth2 Proxy documentation](https://oauth2-proxy.github.io/oauth2-proxy/configuration/overview/#environment-variables) for more information.
 
 ## Security Considerations
 
