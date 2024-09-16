@@ -40,6 +40,10 @@ export class ConfigService {
      */
     REDIS_PASSWORD: str({ default: '' }),
     /**
+     * Redis tls option
+     */
+    REDIS_TLS: bool({ default: false }),
+    /**
      * Comma separate list of bull queue prefixes to
      * monitor (default: bull)
      */
