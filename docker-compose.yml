@@ -54,6 +54,8 @@ services:
       - 3002:9090
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
   redis:
     image: redis:alpine
     ports:
