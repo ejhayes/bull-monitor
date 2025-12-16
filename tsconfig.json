@@ -12,6 +12,8 @@
     "baseUrl": "./src",
     "incremental": true,
     "esModuleInterop": true,
+    "strictNullChecks": true,
+    "types": ["node","jest","supertest"],
     "paths": {
       "@app/*": ["*", "src/*"]
     }

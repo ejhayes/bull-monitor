@@ -1,3 +1,8 @@
+# TODO: switch to node-20 for build
+# TODO: pull binary rather than rebuilding (ensure we still pass output through log transformer)
+# TODO: support amd64/arm64
+# TODO: use phusion/passenger-nodejs base container
+
 FROM node:18-alpine as build
 WORKDIR /app
 RUN apk add --no-cache openssh git

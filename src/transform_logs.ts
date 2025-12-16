@@ -55,7 +55,12 @@ process.stdin.on('data', (data) => {
     .split('\n')
     .filter((el) => el)) {
     try {
-      const parsed = msg.match(regexParser).groups as IParsedMessage;
+      const parsed = msg.match(regexParser)?.groups as IParsedMessage;
+
+      if (!parsed) {
+        throw new Error(`Cannot parse: ${msg}`)
+      }
+
       logger.setContext(parsed.context);
       if (parsed.message.search(/^ERROR/) >= 0) {
         logger.error(parsed.message);
@@ -63,9 +68,8 @@ process.stdin.on('data', (data) => {
         logger.log(parsed.message);
       }
     } catch (err) {
-      //logger.error(err);
       logger.setContext(DEFAULT_CONTEXT);
-      logger.log(msg);
+      logger.error(err);
     }
   }
 });

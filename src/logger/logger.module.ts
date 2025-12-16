@@ -21,10 +21,10 @@ export class LoggerModule {
     const prefixedLoggerProviders: Provider[] = createLoggerProviders(
       dynamicLoggerProviderPrefixes,
     );
-    this.module.providers = this.module.providers.concat(
+    this.module.providers = this.module.providers?.concat(
       prefixedLoggerProviders,
     );
-    this.module.exports = this.module.exports.concat(prefixedLoggerProviders);
+    this.module.exports = this.module.exports?.concat(prefixedLoggerProviders);
 
     return this.module;
   }
@@ -43,11 +43,11 @@ export class LoggerModule {
       useValue: options,
     };
 
-    this.module.providers = this.module.providers.concat(
+    this.module.providers = this.module.providers?.concat(
       [loggerOptionProvider],
       prefixedLoggerProviders,
     );
-    this.module.exports = this.module.exports.concat(prefixedLoggerProviders);
+    this.module.exports = this.module.exports?.concat(prefixedLoggerProviders);
 
     return this.module;
   }
@@ -64,12 +64,12 @@ export class LoggerModule {
     const loggerOptionProvider: Provider =
       this.createAsyncOptionsProvider(options);
 
-    this.module.imports = this.module.imports.concat(options.imports);
-    this.module.providers = this.module.providers.concat(
+    this.module.imports = this.module.imports?.concat(options.imports || []);
+    this.module.providers = this.module.providers?.concat(
       [loggerOptionProvider],
       prefixedLoggerProviders,
     );
-    this.module.exports = this.module.exports.concat(prefixedLoggerProviders);
+    this.module.exports = this.module.exports?.concat(prefixedLoggerProviders);
 
     return this.module;
   }
@@ -86,7 +86,7 @@ export class LoggerModule {
     }
 
     return {
-      inject: [options.useClass || options.useExisting],
+      inject: [options.useClass || options.useExisting || ''],
       provide: LOGGER_MODULE_OPTIONS,
       useFactory: (optionsFactory: LoggerModuleAsyncOptions) => optionsFactory,
     };

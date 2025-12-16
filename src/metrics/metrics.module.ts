@@ -47,7 +47,8 @@ export class MetricsModule {
     }
 
     return {
-      inject: [options.useClass || options.useExisting],
+      // TODO: fix this
+      //inject: [options.useClass || options.useExisting],
       provide: METRICS_MODULE_OPTIONS,
       useFactory: (optionsFactory: MetricsModuleAsyncOptions) => optionsFactory,
     };
