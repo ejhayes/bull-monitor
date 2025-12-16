@@ -85,7 +85,7 @@ export class ConfigService {
      */
     UI: str({
       default: UI_TYPES.BULL_BOARD,
-      choices: [UI_TYPES.BULL_BOARD, UI_TYPES.BULL_MASTER],
+      choices: [UI_TYPES.BULL_BOARD, UI_TYPES.BULL_MASTER, UI_TYPES.QUEUEDASH],
     }),
     /**
      * Version
