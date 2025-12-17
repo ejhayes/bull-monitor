@@ -207,8 +207,7 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
     const subscriber = this.redisService.getOrThrow(REDIS_CLIENTS.SUBSCRIBE);
 
     this.logger.debug(`Deregistering ${REDIS_EVENT_TYPES.PMESSAGE} listener`);
-    // TODO: get this working again
-    //subscriber.removeAllListeners(REDIS_EVENT_TYPES.PMESSAGE);
+    subscriber.removeAllListeners(REDIS_EVENT_TYPES.PMESSAGE);
 
     // we want to make sure we are unsubscribed but if an error gets thrown
     // (e.g. closed connection) that also accomplishes the same goal
@@ -225,8 +224,6 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
     const client = await this.redisService.getOrThrow(REDIS_CLIENTS.PUBLISH);
     const loadedQueues = new Set<string>([]);
     return new Promise((resolve, reject) => {
-      // TODO: get this working again
-      /**
       client
         .scanStream({ type: 'hash', match, count: 100 })
         .on('data', (keys: string[]) => {
@@ -249,7 +246,6 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
           this.logger.error(`${err.stack}`);
           reject(err);
         });
-      */
     });
   }
 
@@ -288,13 +284,12 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
     }
 
     const client = await this.redisService.getOrThrow(REDIS_CLIENTS.PUBLISH);
-    // TODO: fix this
-    const keyspaceConfig = [] /* (
-      (await client.config('GET', REDIS_CONFIG_NOTIFY_KEYSPACE_EVENTS))[1] || ''
+    const keyspaceConfig = (
+      (await client.config('GET', REDIS_CONFIG_NOTIFY_KEYSPACE_EVENTS) as string[])[1] || ''
     )
       .split('')
       .sort()
-      .join(''); */
+      .join('');
     const expectedConfig = [
       ...new Set(keyspaceConfig + REDIS_CONFIG_NOTIFY_KEYSPACE_EVENTS_FLAGS),
     ]
@@ -305,8 +300,7 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
     );
 
     // TODO: fix this
-    if (false) {
-    //if (keyspaceConfig !== expectedConfig) {
+    if (keyspaceConfig !== expectedConfig) {
       this.logger.log(
         `Updating ${REDIS_CONFIG_NOTIFY_KEYSPACE_EVENTS} to '${expectedConfig}'`,
       );
@@ -459,8 +453,6 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
       Object.values(this._queues)
     ].flat()) {
       this.logger.warn(`Closing queue: ${queue.name}`);
-      // TODO: fix this
-      /*
       await new Promise<void>(async (resolve) => {
         (await queue.client).on('close', () => {
           this.logger.warn(`Closed queue: ${queue.name}`);
@@ -472,20 +464,21 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
         });
         queue.close();
       });
-      */
     }
 
     // close all existing connections
-    // TODO: fix this
-    /*
     await Promise.all(
-      Array.from(await this.redisService.()).map(
-        ([name, client]) =>
+      [
+        REDIS_CLIENTS.PUBLISH,
+        REDIS_CLIENTS.SUBSCRIBE
+      ].map(
+        async (name) =>
           new Promise<void>((resolve) => {
+            const client = this.redisService.getOrThrow(name);
             client.removeAllListeners();
             client.quit((err) => {
               if (err) {
-                this.logger.error(err.stack);
+                this.logger.error(err.message);
                 resolve();
                 return;
               }
@@ -496,7 +489,6 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
           }),
       ),
     );
-    */
 
     this.eventEmitter.emit(EVENT_TYPES.QUEUE_SERVICE_CLOSED);
   }

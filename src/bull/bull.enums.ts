@@ -26,6 +26,5 @@ export enum EVENT_TYPES {
 
 export enum UI_TYPES {
   BULL_BOARD = 'bull-board',
-  BULL_MASTER = 'bull-master',
   QUEUEDASH = 'queuedash',
 }

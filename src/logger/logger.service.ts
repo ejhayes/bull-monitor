@@ -4,7 +4,7 @@ import {
   ConsoleLogger as NestLogger,
   Scope,
 } from '@nestjs/common';
-import chalk from 'chalk';
+import {yellow} from 'colorette';
 import {
   Logger as WinstonLogger,
   createLogger,
@@ -15,6 +15,7 @@ import { Environments, LOGGER_MODULE_OPTIONS } from './common';
 import { LoggerMeta, LoggerModuleOptions } from './interfaces';
 import { crash } from '@app/utils';
 
+// TODO: switch to pino logging
 @Injectable({ scope: Scope.TRANSIENT })
 export class LoggerService extends NestLogger {
   private static loggerLastTimestamp: number;
@@ -72,11 +73,7 @@ export class LoggerService extends NestLogger {
   private createDevLogger(): WinstonLogger {
     const { combine, colorize, timestamp, label, printf } = format;
     const myFormat = printf((info) => {
-      return `${info.level} ${info.label} ${this.pid} - ${
-        info.timestamp
-      } ${chalk.yellow(`[${info.context}]`)} ${info.message} ${chalk.yellow(
-        info.timestampDiff,
-      )}`;
+      return `${info.level} ${info.label} ${this.pid} - ${info.timestamp} ${yellow(`[${info.context}]`)} ${info.message}`;
     });
 
     return createLogger({

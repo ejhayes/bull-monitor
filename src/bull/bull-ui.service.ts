@@ -5,8 +5,6 @@ import { InjectLogger, LoggerService } from '../logger';
 import { EVENT_TYPES, UI_TYPES } from './bull.enums';
 import { BullQueuesServiceEvents, IBullUi } from './bull.interfaces';
 import { BullBoardUi } from './ui/bull-board.ui';
-import { BullMasterUi } from './ui/bull-master';
-import { Queue } from 'bullmq';
 import { QueuedashUi } from './ui/queuedash.ui';
 
 @Injectable()
@@ -22,9 +20,6 @@ export class BullUiService {
     switch (configService.config.UI) {
       case UI_TYPES.BULL_BOARD:
         this._ui = new BullBoardUi(logger, configService);
-        break;
-      case UI_TYPES.BULL_MASTER:
-        this._ui = new BullMasterUi(logger, configService);
         break;
       case UI_TYPES.QUEUEDASH:
         this._ui = new QueuedashUi(logger, configService);

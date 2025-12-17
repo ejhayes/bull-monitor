@@ -1,6 +1,8 @@
 import { faker } from '@faker-js/faker';
 import * as Bull from 'bullmq';
-import { cleanEnv, num, port, str } from 'envalid';
+import { Command } from '@commander-js/extra-typings';
+
+// TODO: refactor this so it uses regular arguments
 
 function sleep(ms) {
   return new Promise((resolve) => {
@@ -15,6 +17,7 @@ enum ACTIONS {
   REMOVE = 'remove',
 }
 
+/*
 const config = cleanEnv(process.env, {
   QUEUE: str({ default: 'dummy_test' }),
   ACTION: str({
@@ -37,6 +40,36 @@ const config = cleanEnv(process.env, {
   CREATE_DELAY_MS: num({ default: 0 }),
   CONCURRENCY: num({ default: 1 }),
 });
+*/
+
+const program = new Command()
+  .option('-d, --debug','debug mode',false)
+
+const opts1 = program.opts(); // smart type
+
+program.name('bull-generator')
+  .version('1.0.0')
+  .description('Generates jobs in a Bull queue for testing purposes')
+
+
+
+
+program
+  .command('create')
+  .description('Create jobs in a queue')
+  .argument('[queue]', 'Name of the queue','dummy_test')
+  .option('-l, --limit <number>', 'Number of jobs to create', '0')
+  .action((queueName, options) => {
+    console.log('Using queue:', queueName);
+    console.log('Limit:', options.limit);
+    console.log('Debug:', opts1.debug);
+  });
+  
+
+program.parse(process.argv);
+
+
+/*
 
 const log = (msg: string) => {
   console.log(`[${new Date()}] [${config.PREFIX}:${config.QUEUE}] ${msg}`);
@@ -45,15 +78,6 @@ const log = (msg: string) => {
 const main = async () => {
   log('Creating queue');
   const queue = new Bull.Queue(config.QUEUE, {
-    prefix: config.PREFIX,
-    connection: {
-      host: config.REDIS_HOST,
-      port: config.REDIS_PORT,
-      password: config.REDIS_PASSWORD,
-    },
-  });
-
-  const scheduler = new Bull.QueueScheduler(config.QUEUE, {
     prefix: config.PREFIX,
     connection: {
       host: config.REDIS_HOST,
@@ -112,24 +136,23 @@ const main = async () => {
       queue.add(
         faker.commerce.product(),
         {
-          buzzword: faker.company.bsBuzz(),
-          job: faker.name.jobTitle(),
-          name: faker.name.firstName,
+          buzzword: faker.company.buzzPhrase(),
+          job: faker.person.jobTitle(),
+          name: faker.person.fullName(),
         },
-        { attempts: config.MAX_JOB_ATTEMPTS },
+        {
+          attempts: config.MAX_JOB_ATTEMPTS,
+        }
       );
     }, config.CREATE_DELAY_MS);
   }
 
   if (config.ACTION === ACTIONS.REMOVE) {
-    scheduler.on('error', () => {
-      // do nothing
-    });
     log(`Removing queue`);
-    await scheduler.disconnect();
     await queue.obliterate({ force: true });
     process.exit();
   }
 };
 
 main();
+*/
