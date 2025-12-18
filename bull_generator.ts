@@ -1,6 +1,26 @@
 import { faker } from '@faker-js/faker';
 import * as Bull from 'bullmq';
 import { Command } from '@commander-js/extra-typings';
+import {createLogger, transports, format} from 'winston';
+
+const parseBool = (v: string) => toBool(v);
+const parseNumber = (v: string) => toNumber(v);
+
+const log = createLogger({
+  level: toBool(process.env.DEBUG) ? 'debug' : 'info',
+  format: format.combine(
+    format.colorize(),
+    format.timestamp(),
+    format.printf(
+      ({ level, message, timestamp }) => {
+        return `${timestamp} [${level}] ${message}`;
+      }
+    )
+  ),
+  transports: [
+    new transports.Console(),
+  ]
+});
 
 // TODO: refactor this so it uses regular arguments
 
@@ -43,116 +63,172 @@ const config = cleanEnv(process.env, {
 */
 
 const program = new Command()
-  .option('-d, --debug','debug mode',false)
-
-const opts1 = program.opts(); // smart type
-
-program.name('bull-generator')
+  .name('bull-generator')
   .version('1.0.0')
   .description('Generates jobs in a Bull queue for testing purposes')
+  .argument('[queue]', 'Name of the queue', 'dummyQueue')
+  .option('-F, --fail-probability <probability>','probability of job failure (0.0 - 1.0)', parseNumber, 0.3)
+  .option('-c, --concurrency <concurrency>','concurrency', toNumber, 1)
+  .option('-E, --queue-prefix <prefix>','queue prefix', 'bull')
+  .option('-l, --rate-limit <limit>','rate limit (requests/ms)', '10/1000')
+  .option('-h, --redis-host <host>','redis host', '127.0.0.1')
+  .option('-p, --redis-port <port>','redis port', parseNumber, 6379)
+  .option('-P, --redis-password <password>','redis password')
+  .option('-d, --job-duration <duration>','max job duration (ms)', parseNumber, 100)
+  .option('-b, --job-backoff-duration <duration>','backoff duration (ms)', parseNumber, 0)
+  .option('-a, --job-attempts <attempts>','max job attempts', parseNumber, 4)
+  .option('-C, --create-jobs','create jobs', false)
+  .option('-R, --process-jobs','process jobs', false)
+  .option('-J, --create-job-delay <delay>','delay job creation (mx)', parseNumber, 100)
+  .option('-X, --remove-queue','remove queue', false)
+  .action(async (queueName, options) => {
+    log.info('Using queue:', queueName);
+    log.debug(`Options: ${JSON.stringify(options)}`);
+    
+    // remove queue first
+    if (options.removeQueue) {
+      log.info(`Removing queue ${queueName}...`);
+      await removeQueue(queueName, options);
+    }
 
+    // create jobs second
+    if (options.createJobs) {
+      log.info(`Creating jobs in ${queueName} every ${options.createJobDelay}ms...`);
+      const queue = configureQueue(queueName, options);
 
+      setInterval(() => {
+        const jobData = {
+          buzzword: faker.company.buzzPhrase(),
+          job: faker.person.jobTitle(),
+          name: faker.person.fullName(),
+        };
 
+        log.info(`Adding job to queue ${queueName}: ${JSON.stringify(jobData)}`);
+        queue.add(faker.commerce.product(), jobData);
+      }, options.createJobDelay);
+    }
 
-program
-  .command('create')
-  .description('Create jobs in a queue')
-  .argument('[queue]', 'Name of the queue','dummy_test')
-  .option('-l, --limit <number>', 'Number of jobs to create', '0')
-  .action((queueName, options) => {
-    console.log('Using queue:', queueName);
-    console.log('Limit:', options.limit);
-    console.log('Debug:', opts1.debug);
+    // do processing last
+    if (options.processJobs) {
+      log.info(`Enabling processing of jobs in ${queueName}...`);
+      configureWorker(queueName, options);
+    }
   });
-  
+
+//const options = program.opts()
 
 program.parse(process.argv);
 
 
-/*
+// helpers
+async function removeQueue(queueName: string, options: ReturnType<typeof program.opts>) {
+  const queue = configureQueue(queueName, options);
 
-const log = (msg: string) => {
-  console.log(`[${new Date()}] [${config.PREFIX}:${config.QUEUE}] ${msg}`);
-};
+  log.info(`Removing queue ${queueName}`);
+  await queue.obliterate({ force: true })
+  log.info(`Queue ${queueName} removed`);
+}
 
-const main = async () => {
-  log('Creating queue');
-  const queue = new Bull.Queue(config.QUEUE, {
-    prefix: config.PREFIX,
+function configureQueue(queueName: string, options: ReturnType<typeof program.opts>) {
+  return new Bull.Queue(queueName, {
+    prefix: options.queuePrefix,
     connection: {
-      host: config.REDIS_HOST,
-      port: config.REDIS_PORT,
-      password: config.REDIS_PASSWORD,
+      host: options.redisHost,
+      port: options.redisPort,
+      password: options.redisPassword,
     },
+    defaultJobOptions: {
+      attempts: options.jobAttempts,
+      backoff: {
+        type: 'exponential',
+        delay: options.jobBackoffDuration,
+      }
+    }
   });
+}
 
-  if (
-    config.ACTION === ACTIONS.PROCESS ||
-    config.ACTION === ACTIONS.CREATEPROCESS
-  ) {
-    log(
-      `Enabling processing (${config.LIMITER_MAX} jobs per ${config.LIMITER_DURATION_MS}ms)`,
-    );
-    new Bull.Worker(
-      config.QUEUE,
-      async (job) => {
-        const delay = Math.floor(Math.random() * config.MAX_JOB_DELAY_MS);
-        log(`[JOB: ${job.id}] Starting job with delay ${delay}`);
-        await job.log(`[JOB: ${job.id}] Starting job with delay ${delay}`);
-        await sleep(delay);
-        const fail = Math.round(Math.random()) === 1;
+function configureWorker(queueName: string, options: ReturnType<typeof program.opts>) {
+  const [limit, durationMs] = options.rateLimit.split('/').map(v => toNumber(v));
 
-        if (fail) {
-          log(`[JOB: ${job.id}] Job set to fail`);
-          await job.log(`[JOB: ${job.id}] Job set to fail`);
-          throw new Error(`[JOB: ${job.id}] Failing job for random reason`);
-        }
+  log.info(`Configuring worker with rate limit: ${limit} per ${durationMs}ms`);
 
-        log(`[JOB: ${job.id}] Job is now complete after the delay`);
-        job.log(`[JOB: ${job.id}] Job is now complete after the delay`);
+  return new Bull.Worker(queueName,
+    async (job) => {
+      const delay = Math.floor(Math.random() * options.jobDuration);
+      await job.log(`[JOB: ${job.id}] Starting job with delay ${delay}ms`);
+      await sleep(delay);
+
+      // random failure
+      failWithProbability(options.failProbability);
+      
+      await job.log(`[JOB: ${job.id}] Job is now complete after the delay`);
+    },
+    {
+      prefix: options.queuePrefix,
+      connection: {
+        host: options.redisHost,
+        port: options.redisPort,
+        password: options.redisPassword,
       },
-      {
-        connection: {
-          host: config.REDIS_HOST,
-          port: config.REDIS_PORT,
-          password: config.REDIS_PASSWORD,
-        },
-        limiter: {
-          duration: config.LIMITER_DURATION_MS,
-          max: config.LIMITER_MAX,
-        },
-        concurrency: config.CONCURRENCY,
+      limiter: {
+        duration: durationMs,
+        max: limit,
       },
-    );
+      concurrency: options.concurrency,
+    },
+  ).on('failed', (job, err) => {
+    log.error(`[JOB: ${job?.id}] Failed with error: ${err.message}`);
+  })
+  .on('completed', (job) => {
+    log.info(`[JOB: ${job?.id}] Completed successfully`);
+  });
+}
+
+function failWithProbability(probability: number): void {
+  if (probability < 0 || probability > 1) {
+    throw new Error('probability must be between 0 and 1');
   }
 
-  if (
-    config.ACTION === ACTIONS.CREATE ||
-    config.ACTION === ACTIONS.CREATEPROCESS
-  ) {
-    log(`Creating jobs every ${config.CREATE_DELAY_MS}ms...`);
-    setInterval(() => {
-      log('Adding dummy job');
-      queue.add(
-        faker.commerce.product(),
-        {
-          buzzword: faker.company.buzzPhrase(),
-          job: faker.person.jobTitle(),
-          name: faker.person.fullName(),
-        },
-        {
-          attempts: config.MAX_JOB_ATTEMPTS,
-        }
-      );
-    }, config.CREATE_DELAY_MS);
+  if (Math.random() < probability) {
+    throw new Error('Injected failure');
+  }
+}
+
+function toNumber(
+  value: unknown,
+  defaultValue?: number,
+): number {
+  if (value === undefined || value === null) {
+    if (defaultValue !== undefined) return defaultValue;
+    throw new Error('Expected number but got undefined');
   }
 
-  if (config.ACTION === ACTIONS.REMOVE) {
-    log(`Removing queue`);
-    await queue.obliterate({ force: true });
-    process.exit();
-  }
-};
+  const n =
+    typeof value === 'number'
+      ? value
+      : typeof value === 'string'
+        ? Number(value)
+        : NaN;
 
-main();
-*/
+  if (!Number.isFinite(n)) {
+    throw new Error(`Invalid number: ${value}`);
+  }
+
+  return n;
+}
+
+function toBool(
+  value: unknown,
+  defaultValue = false,
+): boolean {
+  if (value === undefined || value === null) return defaultValue;
+
+  if (typeof value === 'boolean') return value;
+
+  if (typeof value === 'string') {
+    return ['1', 'true', 'yes', 'on'].includes(value.toLowerCase());
+  }
+
+  return defaultValue;
+}
+
