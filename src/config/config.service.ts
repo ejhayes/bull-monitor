@@ -1,6 +1,8 @@
 import { UI_TYPES } from '@app/bull/bull.enums';
 import { LOG_LEVELS } from '@app/logger/common';
+import { RedisClientOptions, RedisModuleOptions } from '@liaoliaots/nestjs-redis';
 import { Injectable } from '@nestjs/common';
+import { ConnectionOptions } from 'bullmq';
 import { bool, cleanEnv, num, port, str } from 'envalid';
 
 @Injectable()
@@ -30,15 +32,19 @@ export class ConfigService {
     /**
      * Redis host to fetch queues from
      */
-    REDIS_HOST: str(),
+    REDIS_HOST: str({default: undefined, requiredWhen: (cleanedEnv) => !cleanedEnv['REDIS_URL']}),
     /**
      * Redis port to fetch queues from
      */
-    REDIS_PORT: port(),
+    REDIS_PORT: port({default: undefined, requiredWhen: (cleanedEnv) => !cleanedEnv['REDIS_URL']}),
     /**
      * Redis password (if needed)
      */
     REDIS_PASSWORD: str({ default: '' }),
+    /**
+     * Redis URL (for advanced use cases)
+     */
+    REDIS_URL: str({default: undefined, requiredWhen: (cleanedEnv) => !cleanedEnv['REDIS_HOST'] || !cleanedEnv['REDIS_PORT']}),
     /**
      * Comma separate list of bull queue prefixes to
      * monitor (default: bull)
@@ -95,5 +101,41 @@ export class ConfigService {
 
   get config() {
     return this._config;
+  }
+
+  get redisConfig(): RedisClientOptions {
+    // If REDIS_URL is specified, use that
+    if (this.config.REDIS_URL ) {
+      return {
+        url: this.config.REDIS_URL,
+        enableReadyCheck: true,
+        reconnectOnError: () => true,
+      };
+    }
+
+    return {
+      host: this.config.REDIS_HOST,
+      password: this.config.REDIS_PASSWORD,
+      port: this.config.REDIS_PORT,
+      db: this.config.REDIS_DB,
+      enableReadyCheck: true,
+      reconnectOnError: () => true,
+    };
+  }
+
+  get bullRedisConfig(): ConnectionOptions {
+    // If REDIS_URL is specified, use that
+    if (this.config.REDIS_URL ) {
+      return {
+        url: this.config.REDIS_URL,
+      };
+    }
+
+    return {
+      host: this.config.REDIS_HOST,
+      password: this.config.REDIS_PASSWORD,
+      port: this.config.REDIS_PORT,
+      db: this.config.REDIS_DB,
+    };
   }
 }

@@ -3,9 +3,6 @@ import * as Bull from 'bullmq';
 import { Command } from '@commander-js/extra-typings';
 import {createLogger, transports, format} from 'winston';
 
-const parseBool = (v: string) => toBool(v);
-const parseNumber = (v: string) => toNumber(v);
-
 const log = createLogger({
   level: toBool(process.env.DEBUG) ? 'debug' : 'info',
   format: format.combine(
@@ -22,7 +19,7 @@ const log = createLogger({
   ]
 });
 
-// TODO: refactor this so it uses regular arguments
+const parseNumber = (value: string) => toNumber(value);
 
 function sleep(ms) {
   return new Promise((resolve) => {
@@ -30,45 +27,13 @@ function sleep(ms) {
   });
 }
 
-enum ACTIONS {
-  CREATE = 'create',
-  CREATEPROCESS = 'createprocess',
-  PROCESS = 'process',
-  REMOVE = 'remove',
-}
-
-/*
-const config = cleanEnv(process.env, {
-  QUEUE: str({ default: 'dummy_test' }),
-  ACTION: str({
-    default: ACTIONS.PROCESS,
-    choices: [
-      ACTIONS.PROCESS,
-      ACTIONS.REMOVE,
-      ACTIONS.CREATE,
-      ACTIONS.CREATEPROCESS,
-    ],
-  }),
-  MAX_JOB_DELAY_MS: num({ default: 100 }),
-  MAX_JOB_ATTEMPTS: num({ default: 4 }),
-  PREFIX: str({ default: 'bull' }),
-  LIMITER_MAX: num({ default: 10 }),
-  LIMITER_DURATION_MS: num({ default: 1000 }),
-  REDIS_HOST: str({ default: '127.0.0.1' }),
-  REDIS_PASSWORD: str({ default: '' }),
-  REDIS_PORT: port({ default: 6001 }),
-  CREATE_DELAY_MS: num({ default: 0 }),
-  CONCURRENCY: num({ default: 1 }),
-});
-*/
-
 const program = new Command()
   .name('bull-generator')
   .version('1.0.0')
   .description('Generates jobs in a Bull queue for testing purposes')
   .argument('[queue]', 'Name of the queue', 'dummyQueue')
   .option('-F, --fail-probability <probability>','probability of job failure (0.0 - 1.0)', parseNumber, 0.3)
-  .option('-c, --concurrency <concurrency>','concurrency', toNumber, 1)
+  .option('-c, --concurrency <concurrency>','concurrency', parseNumber, 1)
   .option('-E, --queue-prefix <prefix>','queue prefix', 'bull')
   .option('-l, --rate-limit <limit>','rate limit (requests/ms)', '10/1000')
   .option('-h, --redis-host <host>','redis host', '127.0.0.1')
@@ -79,7 +44,7 @@ const program = new Command()
   .option('-a, --job-attempts <attempts>','max job attempts', parseNumber, 4)
   .option('-C, --create-jobs','create jobs', false)
   .option('-R, --process-jobs','process jobs', false)
-  .option('-J, --create-job-delay <delay>','delay job creation (mx)', parseNumber, 100)
+  .option('-J, --create-job-delay <delay>','delay job creation (ms)', parseNumber, 100)
   .option('-X, --remove-queue','remove queue', false)
   .action(async (queueName, options) => {
     log.info('Using queue:', queueName);
@@ -95,17 +60,17 @@ const program = new Command()
     if (options.createJobs) {
       log.info(`Creating jobs in ${queueName} every ${options.createJobDelay}ms...`);
       const queue = configureQueue(queueName, options);
-
-      setInterval(() => {
-        const jobData = {
-          buzzword: faker.company.buzzPhrase(),
-          job: faker.person.jobTitle(),
-          name: faker.person.fullName(),
-        };
-
-        log.info(`Adding job to queue ${queueName}: ${JSON.stringify(jobData)}`);
-        queue.add(faker.commerce.product(), jobData);
-      }, options.createJobDelay);
+      (async () => {
+        while (true) {
+          await sleep(Math.floor(Math.random() * options.createJobDelay));
+          log.info(`Adding job to queue ${queueName}`);
+          await queue.add(faker.commerce.product(), {
+            buzzword: faker.company.buzzPhrase(),
+            job: faker.person.jobTitle(),
+            name: faker.person.fullName(),
+          });
+        }
+      })();
     }
 
     // do processing last
@@ -114,8 +79,6 @@ const program = new Command()
       configureWorker(queueName, options);
     }
   });
-
-//const options = program.opts()
 
 program.parse(process.argv);
 
@@ -177,10 +140,19 @@ function configureWorker(queueName: string, options: ReturnType<typeof program.o
       concurrency: options.concurrency,
     },
   ).on('failed', (job, err) => {
-    log.error(`[JOB: ${job?.id}] Failed with error: ${err.message}`);
+    job?.log(`[JOB: ${job?.id}] Failed with error: ${err.message}`);
+  })
+  .on('active', (job) => {
+    job.log(`[JOB: ${job?.id}] is now active`);
+  })
+  .on('drained', () => {
+    log.info(`All jobs have been processed, queue is drained`);
+  })
+  .on('stalled', (job) => {
+    log.warn(`[JOB: ${job}] has stalled and will be reprocessed`);
   })
   .on('completed', (job) => {
-    log.info(`[JOB: ${job?.id}] Completed successfully`);
+    job.log(`[JOB: ${job?.id}] Completed successfully`);
   });
 }
 
@@ -231,4 +203,3 @@ function toBool(
 
   return defaultValue;
 }
-

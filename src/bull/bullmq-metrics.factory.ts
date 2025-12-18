@@ -190,11 +190,7 @@ export class BullMQMetricsFactory {
     };
     const queueEvents = new QueueEvents(queueName, {
       prefix: queuePrefix,
-      connection: {
-        host: this.configService.config.REDIS_HOST,
-        port: this.configService.config.REDIS_PORT,
-        password: this.configService.config.REDIS_PASSWORD,
-      },
+      connection: this.configService.bullRedisConfig,
     });
 
     queueEvents.on('error', (err) => {

@@ -107,11 +107,7 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
         // issues.
         this._queues[queueKey] = new Queue(queueName, {
           prefix: queuePrefix,
-          connection: {
-            host: this.configService.config.REDIS_HOST,
-            port: this.configService.config.REDIS_PORT,
-            password: this.configService.config.REDIS_PASSWORD,
-          },
+          connection: this.configService.bullRedisConfig,
         });
         this._queues[queueKey].on('error', (err) => {
           Error.captureStackTrace(err);
