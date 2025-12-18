@@ -18,7 +18,10 @@ describe('Bull Board UI', () => {
   });
 
   it('/queues', () => {
-    return request(app.getHttpServer()).get('/queues/').expect(200);
-    //.expect('something')
+    return request(app.getHttpServer()).get('/queues/')
+      .expect(200)
+      .expect(res => {
+        expect(res.text).toContain('Bull Dashboard');
+      });
   });
 });

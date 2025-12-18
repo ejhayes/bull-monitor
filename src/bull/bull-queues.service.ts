@@ -2,8 +2,8 @@ import { ConfigService } from '@app/config/config.service';
 import { InjectLogger, LoggerService } from '@app/logger';
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { Mutex, withTimeout } from 'async-mutex';
-import { Queue, QueueScheduler } from 'bullmq';
-import { RedisService } from 'nestjs-redis';
+import { Queue } from 'bullmq';
+import { RedisService } from '@liaoliaots/nestjs-redis';
 import { TypedEmitter } from 'tiny-typed-emitter2';
 import {
   EVENT_TYPES,
@@ -22,11 +22,12 @@ const BULL_KEYSPACE_REGEX = /(?<queuePrefix>[^:]+):(?<queueName>[^:]+):meta$/;
 const parseBullQueue = (key: string) => {
   const MATCHER = key.match(/:meta$/) ? BULL_KEYSPACE_REGEX : BULL_QUEUE_REGEX;
   const match = key.match(MATCHER);
+
   return {
-    queuePrefix: match.groups?.queuePrefix
+    queuePrefix: match?.groups?.queuePrefix
       ? match.groups.queuePrefix
       : 'unknown',
-    queueName: match.groups?.queueName ? match.groups.queueName : 'unknown',
+    queueName: match?.groups?.queueName ? match.groups.queueName : 'unknown',
   };
 };
 
@@ -39,7 +40,6 @@ const REDIS_CONFIG_NOTIFY_KEYSPACE_EVENTS_FLAGS = 'A$K';
 export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
   private _initialized = false;
   private readonly _queues: { [queueName: string]: Queue } = {};
-  private readonly _schedulers: { [queueName: string]: QueueScheduler } = {};
   private readonly _redisMutex = withTimeout(new Mutex(), 10000);
   private readonly _bullMutex = withTimeout(new Mutex(), 10000);
 
@@ -85,7 +85,12 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
     queueName: string;
     queuePrefix: string;
   } {
-    return queueKey.match(/^(?<queuePrefix>.+):::(?<queueName>.+)$/).groups as {
+    const matcher = queueKey.match(/^(?<queuePrefix>.+):::(?<queueName>.+)$/)
+
+    if (!matcher) {
+      throw new Error(`Unable to split queueKey: ${queueKey}`)
+    }
+    return matcher.groups as {
       queueName: string;
       queuePrefix: string;
     };
@@ -102,41 +107,14 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
         // issues.
         this._queues[queueKey] = new Queue(queueName, {
           prefix: queuePrefix,
-          connection: {
-            host: this.configService.config.REDIS_HOST,
-            port: this.configService.config.REDIS_PORT,
-            password: this.configService.config.REDIS_PASSWORD,
-          },
+          connection: this.configService.bullRedisConfig,
         });
         this._queues[queueKey].on('error', (err) => {
           Error.captureStackTrace(err);
-          this.logger.error(err.stack);
+          this.logger.error(err.stack || `${err.name}: ${err.message}`);
           this.removeQueue(queuePrefix, queueName);
         });
         this._queues[queueKey].on('ioredis:close', () => {
-          this.removeQueue(queuePrefix, queueName);
-        });
-        /**
-         * From: https://docs.bullmq.io/guide/connections
-         *
-         * Every class will consume at least one Redis connection, but it
-         * is also possible to reuse connections in some situations. For example,
-         * the Queue and Worker classes can accept an existing ioredis instance, and
-         * by that reusing that connection, however QueueScheduler and QueueEvents
-         * cannot do that because they require blocking connections to Redis, which
-         * makes it impossible to reuse them.
-         */
-        this._schedulers[queueKey] = new QueueScheduler(queueName, {
-          prefix: queuePrefix,
-          connection: {
-            host: this.configService.config.REDIS_HOST,
-            port: this.configService.config.REDIS_PORT,
-            password: this.configService.config.REDIS_PASSWORD,
-          },
-        });
-        this._schedulers[queueKey].on('error', (err) => {
-          Error.captureStackTrace(err);
-          this.logger.error(err.stack);
           this.removeQueue(queuePrefix, queueName);
         });
         this.eventEmitter.emit(
@@ -156,14 +134,12 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
 
         try {
           await this._queues[queueKey].close();
-          await this._schedulers[queueKey].close();
         } catch (err) {
           // in the event of an error just ignore it and move on
           this.logger.error(err);
         }
 
         delete this._queues[queueKey];
-        delete this._schedulers[queueKey];
 
         this.eventEmitter.emit(
           EVENT_TYPES.QUEUE_REMOVED,
@@ -178,7 +154,7 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
   private async registerRedisEventListeners() {
     if (this._initialized) return;
 
-    const subscriber = this.redisService.getClient(REDIS_CLIENTS.SUBSCRIBE);
+    const subscriber = this.redisService.getOrThrow(REDIS_CLIENTS.SUBSCRIBE);
     const queuePrefixes =
       this.configService.config.BULL_WATCH_QUEUE_PREFIXES.split(',').map(
         (item) => item.trim(),
@@ -192,7 +168,7 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
         `__keyspace@0__:${queuePrefix}:*:meta`,
         (err, count) => {
           if (err) {
-            this.logger.error(err.stack);
+            this.logger.error(err.message);
           }
           this.logger.log(
             `Subscribed to ${count} keyspace event(s) for '${queuePrefix}'`,
@@ -224,7 +200,7 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
   private async deregisterRedisEventListeners() {
     if (!this._initialized) return;
 
-    const subscriber = this.redisService.getClient(REDIS_CLIENTS.SUBSCRIBE);
+    const subscriber = this.redisService.getOrThrow(REDIS_CLIENTS.SUBSCRIBE);
 
     this.logger.debug(`Deregistering ${REDIS_EVENT_TYPES.PMESSAGE} listener`);
     subscriber.removeAllListeners(REDIS_EVENT_TYPES.PMESSAGE);
@@ -241,8 +217,8 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async findAndPopulateQueues(match: string): Promise<string[]> {
-    const client = await this.redisService.getClient(REDIS_CLIENTS.PUBLISH);
-    const loadedQueues = new Set([]);
+    const client = await this.redisService.getOrThrow(REDIS_CLIENTS.PUBLISH);
+    const loadedQueues = new Set<string>([]);
     return new Promise((resolve, reject) => {
       client
         .scanStream({ type: 'hash', match, count: 100 })
@@ -303,9 +279,9 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
       return;
     }
 
-    const client = await this.redisService.getClient(REDIS_CLIENTS.PUBLISH);
+    const client = await this.redisService.getOrThrow(REDIS_CLIENTS.PUBLISH);
     const keyspaceConfig = (
-      (await client.config('GET', REDIS_CONFIG_NOTIFY_KEYSPACE_EVENTS))[1] || ''
+      (await client.config('GET', REDIS_CONFIG_NOTIFY_KEYSPACE_EVENTS) as string[])[1] || ''
     )
       .split('')
       .sort()
@@ -319,6 +295,7 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
       `Redis config for ${REDIS_CONFIG_NOTIFY_KEYSPACE_EVENTS}: '${keyspaceConfig}'`,
     );
 
+    // TODO: fix this
     if (keyspaceConfig !== expectedConfig) {
       this.logger.log(
         `Updating ${REDIS_CONFIG_NOTIFY_KEYSPACE_EVENTS} to '${expectedConfig}'`,
@@ -409,10 +386,10 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
   async onModuleInit() {
     this.logger.log('Bootstrapping');
 
-    const subscriber = await this.redisService.getClient(
+    const subscriber = await this.redisService.getOrThrow(
       REDIS_CLIENTS.SUBSCRIBE,
     );
-    const publisher = await this.redisService.getClient(REDIS_CLIENTS.PUBLISH);
+    const publisher = await this.redisService.getOrThrow(REDIS_CLIENTS.PUBLISH);
 
     if (subscriber.status == 'ready') {
       this.initializeSubscriber();
@@ -469,8 +446,7 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
 
     // close all connections
     for (const queue of [
-      Object.values(this._queues),
-      Object.values(this._schedulers),
+      Object.values(this._queues)
     ].flat()) {
       this.logger.warn(`Closing queue: ${queue.name}`);
       await new Promise<void>(async (resolve) => {
@@ -488,13 +464,17 @@ export class BullQueuesService implements OnModuleInit, OnModuleDestroy {
 
     // close all existing connections
     await Promise.all(
-      Array.from(await this.redisService.getClients()).map(
-        ([name, client]) =>
+      [
+        REDIS_CLIENTS.PUBLISH,
+        REDIS_CLIENTS.SUBSCRIBE
+      ].map(
+        async (name) =>
           new Promise<void>((resolve) => {
+            const client = this.redisService.getOrThrow(name);
             client.removeAllListeners();
             client.quit((err) => {
               if (err) {
-                this.logger.error(err.stack);
+                this.logger.error(err.message);
                 resolve();
                 return;
               }

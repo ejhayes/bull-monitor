@@ -170,7 +170,7 @@ export class BullMQMetricsFactory {
     status: STATUS_TYPES,
     job: Job,
   ) {
-    if (!job.finishedOn) {
+    if (!job.finishedOn || !job.processedOn) {
       return;
     }
     const jobLabels = {
@@ -190,19 +190,16 @@ export class BullMQMetricsFactory {
     };
     const queueEvents = new QueueEvents(queueName, {
       prefix: queuePrefix,
-      connection: {
-        host: this.configService.config.REDIS_HOST,
-        port: this.configService.config.REDIS_PORT,
-        password: this.configService.config.REDIS_PASSWORD,
-      },
+      connection: this.configService.bullRedisConfig,
     });
 
     queueEvents.on('error', (err) => {
-      this.logger.error(err.stack);
+      this.logger.error(err.message);
     });
 
     queueEvents.on('stalled', async (event) => {
       const job = await queue.getJob(event.jobId);
+      if (!job) return;
       const jobLabels = {
         [LABEL_NAMES.JOB_NAME]: job.name,
         ...labels,
@@ -211,6 +208,7 @@ export class BullMQMetricsFactory {
     });
     queueEvents.on('active', async (event) => {
       const job = await queue.getJob(event.jobId);
+      if (!job) return;
       const jobLabels = {
         [LABEL_NAMES.JOB_NAME]: job.name,
         ...labels,
@@ -219,6 +217,7 @@ export class BullMQMetricsFactory {
     });
     queueEvents.on('waiting', async (event) => {
       const job = await queue.getJob(event.jobId);
+      if (!job) return;
       const jobLabels = {
         [LABEL_NAMES.JOB_NAME]: job.name,
         ...labels,
@@ -227,6 +226,7 @@ export class BullMQMetricsFactory {
     });
     queueEvents.on('failed', async (event) => {
       const job = await queue.getJob(event.jobId);
+      if (!job) return;
       const errorType = job.stacktrace[job.stacktrace.length - 1]?.match(
         /^(?<errorType>[^:]+):/,
       )?.groups?.errorType;
@@ -236,10 +236,12 @@ export class BullMQMetricsFactory {
         ...labels,
       };
       this.jobs_failed.inc(jobLabels, 1);
-      this.recordJobMetrics(jobLabels, STATUS_TYPES.FAILED, job);
+      // TODO: fix this
+      //this.recordJobMetrics(jobLabels, STATUS_TYPES.FAILED, job);
     });
     queueEvents.on('delayed', async (event) => {
       const job = await queue.getJob(event.jobId);
+      if (!job) return;
       const jobLabels = {
         [LABEL_NAMES.JOB_NAME]: job.name,
         ...labels,
@@ -248,6 +250,7 @@ export class BullMQMetricsFactory {
     });
     queueEvents.on('completed', async (event) => {
       const job = await queue.getJob(event.jobId);
+      if (!job) return;
       const jobLabels = {
         [LABEL_NAMES.JOB_NAME]: job.name,
         ...labels,

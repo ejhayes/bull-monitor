@@ -40,20 +40,25 @@ bull-monitor:
   environment:
     REDIS_HOST: <your redis host>
     REDIS_PORT: <your redis port>
+    #REDIS_URL: <advanced used cases>
     BULL_WATCH_QUEUE_PREFIXES: bull
     PORT: 3000
-    UI: bull-master
+    UI: queuedash
 ```
 
-Then run `docker-compose up bull-monitor`. Assuming no issues, the following paths are available:
+Then run `docker-compose up bull-monitor`. 
+
+**NOTE:** if you have more advanced redis connectivity needs pass the connection string in `REDIS_URL` instead
+
+Assuming no issues, the following paths are available:
 
 | Path                                  | Description                                                                                                                         |
 | ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | [`/metrics`](localhos:3000/metrics)   | Prometheus metrics                                                                                                                  |
 | [`/health`](localhos:3000/metrics)    | Health endpoint (always returns `HTTP 200` with `OK` text)                                                                          |
-| [`/docs`](localhos:3000/metrics)      | Swagger UI                                                                                                                          |
-| [`/docs-json`](localhos:3000/metrics) | Swagger JSON definition                                                                                                             |
-| [`/queues`](localhos:3000/metrics)    | Bull UI (currently [`arena`](https://www.npmjs.com/package/bull-arena) or [`bull-board`](https://www.npmjs.com/package/bull-board)) |
+| [`/docs`](localhos:3000/docs)      | Swagger UI                                                                                                                          |
+| [`/docs-json`](localhos:3000/docs-json) | Swagger JSON definition                                                                                                             |
+| [`/queues`](localhos:3000/queues)    | Bull UI (currently [`queuedash`](https://github.com/alexbudure/queuedash) or [`bull-board`](https://www.npmjs.com/package/bull-board)) |
 
 ## configuration
 
@@ -65,7 +70,7 @@ The following environment variables are supported:
 | `REDIS_HOST`                             | x        | `null`         | Redis host (**IMPORTANT** must be same redis instance that stores bull jobs!)                                                                                            |
 | `REDIS_PORT`                             | x        | `null`         | Redis port                                                                                                                                                               |
 | `REDIS_PASSWORD`                         |          | `null`         | Redis password                                                                                                                                                           |
-| `REDIS_DB`                               |          | `0`            | Redis database index to use (see `options.db` from [docs](https://ioredis.readthedocs.io/en/latest/API/#new-redisport-host-options))                                     |
+| `REDIS_URL`                               |          | `null`            | Redis connection string to use (see [docs](https://redis.io/docs/latest/develop/clients/nodejs/connect/?utm_source=chatgpt.com#basic-connection) for examples)                                     |
 | `UI`                                     |          | `bull-board`   | UI to use (supported: `arena`, `bull-board`)                                                                                                                             |
 | `BULL_WATCH_QUEUE_PREFIXES`              |          | `bull`         | Bull prefixes to monitor (globs like `prefix*` are supported)                                                                                                            |
 | `BULL_COLLECT_QUEUE_METRICS_INTERVAL_MS` |          | `60000`        | How often queue metrics are gathered                                                                                                                                     |
@@ -103,19 +108,19 @@ To build the container (will be built/tagged as `ejhayes/nodejs-bull-monitor`):
 npm run ci:build
 ```
 
-## generating quues/workers
+## generating queues/workers
 
 A test script is included so you can try creating and/or processing bull jobs. Examples:
 
 ```
-# create a queue and add jobs to it (no processing)
-npm run generate:create
+# create and process jobs (with retries, backoffs, rate limits, etc)
+DEBUG=1 npm run generate example-queue -- --redis-port 6001  --job-backoff-duration 3000 --create-job-delay 100 --rate-limit 100/2000 -F 0.6 --concurrency 3 --create-jobs --process-jobs
 
-# process queue jobs only
-npm run generate:process
+# remove a queue
+npm run generate example-queue -- --redis-port 6001 --remove-queue
 
-# create and process jobs
-npm run generate
+# show help
+npm run generate -- --help
 ```
 
 The default behavior of `npm run generate` is to:
@@ -201,15 +206,9 @@ From: https://github.com/felixmosh/bull-board#readme. This is the default UI. If
 
 ![](screenshots/bull-board-ui.png)
 
-### bull-master
+### queuedash
 
-From: https://github.com/hans-lizihan/bull-master. To use this UI you'll need to set the `UI` environment variable to `bull-master`.
-
-![](screenshots/bull-master-ui.png)
-
-### bull-arena
-
-From: https://github.com/bee-queue/arena. To use this UI you'll need to set the `UI` environment variable to `arena`.
+From: https://github.com/alexbudure/queuedash. To use this UI you'll need to set the `UI` environment variable to `queuedash`.
 
 ![](screenshots/arena-ui.png)
 
@@ -226,7 +225,7 @@ Many other configuration options are possible. See the [OAuth2 Proxy documentati
 
 ## Security Considerations
 
-- This is intended as a back office monitoring solution. You should not make expose this publicly
+- This is intended as a back office monitoring solution. You should not expose this publicly as-is
 - This is currently intended to run as a single process and should not be scaled horizontally (future todo item)
 
 ## Local Development

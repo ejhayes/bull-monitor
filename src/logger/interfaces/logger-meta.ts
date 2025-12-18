@@ -1,5 +1,5 @@
 export interface LoggerMeta {
-  context: string;
+  context?: string;
   timestampDiff: string;
-  trace: string;
+  trace?: string;
 }

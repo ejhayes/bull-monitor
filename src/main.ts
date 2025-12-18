@@ -29,6 +29,7 @@ async function bootstrap() {
 
 // uncaught redis or mutex issues should result in the process being restarted
 process.on('uncaughtException', (err) => {
+  // TODO: check to see if this creates a sentry error
   console.error(err.name);
   console.error(err.stack);
   process.exit(1);

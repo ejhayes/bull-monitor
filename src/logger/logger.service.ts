@@ -4,7 +4,7 @@ import {
   ConsoleLogger as NestLogger,
   Scope,
 } from '@nestjs/common';
-import { yellow } from 'chalk';
+import {yellow} from 'colorette';
 import {
   Logger as WinstonLogger,
   createLogger,
@@ -13,7 +13,9 @@ import {
 } from 'winston';
 import { Environments, LOGGER_MODULE_OPTIONS } from './common';
 import { LoggerMeta, LoggerModuleOptions } from './interfaces';
+import { crash } from '@app/utils';
 
+// TODO: switch to pino logging
 @Injectable({ scope: Scope.TRANSIENT })
 export class LoggerService extends NestLogger {
   private static loggerLastTimestamp: number;
@@ -29,9 +31,9 @@ export class LoggerService extends NestLogger {
     private readonly opts: LoggerModuleOptions = {},
   ) {
     super();
-    this.env = this.opts.env || process.env.NODE_ENV;
-    this.logLabel = this.opts.label || process.env.LOG_LABEL;
-    this.logLevel = this.opts.level || process.env.LOG_LEVEL;
+    this.env = this.opts.env || process.env.NODE_ENV || crash('NODE_ENV must be specified');
+    this.logLabel = this.opts.label || process.env.LOG_LABEL || crash('LOG_LABEL must be specified');
+    this.logLevel = this.opts.level || process.env.LOG_LEVEL || crash('LOG_LEVEL must be specified');
     this.pid = process.pid;
     this.silent =
       this.opts.silent ||
@@ -71,11 +73,7 @@ export class LoggerService extends NestLogger {
   private createDevLogger(): WinstonLogger {
     const { combine, colorize, timestamp, label, printf } = format;
     const myFormat = printf((info) => {
-      return `${info.level} ${info.label} ${this.pid} - ${
-        info.timestamp
-      } ${yellow(`[${info.context}]`)} ${info.message} ${yellow(
-        info.timestampDiff,
-      )}`;
+      return `${info.level} ${info.label} ${this.pid} - ${info.timestamp} ${yellow(`[${info.context}]`)} ${info.message}`;
     });
 
     return createLogger({
@@ -117,6 +115,7 @@ export class LoggerService extends NestLogger {
 
           // level is a reserved keyword in production - change this
           // to log.level instead
+          // @ts-ignore
           delete info.level;
           info.log = { level: this.logLevel };
 
@@ -133,7 +132,7 @@ export class LoggerService extends NestLogger {
     });
   }
 
-  private getMeta(context: string, trace?: string): LoggerMeta {
+  private getMeta(context?: string, trace?: string): LoggerMeta {
     return {
       context: context || this.context,
       timestampDiff: LoggerService.getAndUpdateTimestampDiff(),

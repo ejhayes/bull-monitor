@@ -4,9 +4,8 @@ import { ConfigService } from '../config/config.service';
 import { InjectLogger, LoggerService } from '../logger';
 import { EVENT_TYPES, UI_TYPES } from './bull.enums';
 import { BullQueuesServiceEvents, IBullUi } from './bull.interfaces';
-import { BullArenaUi } from './ui/arena.ui';
 import { BullBoardUi } from './ui/bull-board.ui';
-import { BullMasterUi } from './ui/bull-master';
+import { QueuedashUi } from './ui/queuedash.ui';
 
 @Injectable()
 export class BullUiService {
@@ -19,14 +18,11 @@ export class BullUiService {
     events: TypedEmitter<BullQueuesServiceEvents>,
   ) {
     switch (configService.config.UI) {
-      case UI_TYPES.ARENA:
-        this._ui = new BullArenaUi(logger, configService);
-        break;
       case UI_TYPES.BULL_BOARD:
         this._ui = new BullBoardUi(logger, configService);
         break;
-      case UI_TYPES.BULL_MASTER:
-        this._ui = new BullMasterUi(logger, configService);
+      case UI_TYPES.QUEUEDASH:
+        this._ui = new QueuedashUi(logger, configService);
         break;
       default:
         throw new Error(`Unknown UI type: ${configService.config.UI}`);
